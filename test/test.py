@@ -37,13 +37,13 @@ async def test_project(dut):
 
     dut._log.info("Check output values")
 
-    dut._log.info(f"Input Value: {dut.user_project.br.o_data_reg.value}")
-    dut._log.info(f"Input Valid: {dut.user_project.br.o_valid_reg.value}")
+    dut._log.info(f"Input Value: {dut.user_project.input_value.value}")
+    dut._log.info(f"Input Valid: {dut.user_project.input_valid.value}")
 
     # The following assersion is just an example of how to check the output values.
     # Change it to match the actual expected output of your module:
-    assert dut.user_project.br.o_valid_reg.value == 1, "Input valid signal should be high"
-    assert dut.user_project.br.o_data_reg.value == 4, "Input value should be 4"
+    assert dut.user_project.input_valid.value == 1, "Input valid signal should be high"
+    assert dut.user_project.input_value.value == 4, "Input value should be 4"
 
     # Keep testing the module by changing the input values, waiting for
     # one or more clock cycles, and asserting the expected output values.

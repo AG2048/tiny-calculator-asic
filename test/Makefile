@@ -5,7 +5,7 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v button_reader.sv
+PROJECT_SOURCES = button_reader.sv project.v
 
 ifneq ($(GATES),yes)
 
