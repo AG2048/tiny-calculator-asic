@@ -26,8 +26,8 @@ module tt_um_ag2048_calculator (
   wire       input_valid;
   wire       input_ready;
 
-  wire o_word_lines;
-  wire i_bit_lines;
+  wire [3:0] o_word_lines;
+  wire [3:0] i_bit_lines;
 
   wire i_ac_pin;
   wire i_add_pin;
@@ -66,7 +66,9 @@ module tt_um_ag2048_calculator (
       .i_ready      (input_ready)
   );
 
+  assign input_ready = 1'b0; // Always not ready to accept input
+
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, ui_in[7:4], uio_in[7:6], 1'b0};
+  wire _unused = &{ena, ui_in[7:4], uio_in[7:6], input_value, input_valid, 1'b0};
 
 endmodule

@@ -28,7 +28,8 @@ module button_reader (
     logic [3:0] number_input;
     assign number_input[3:2] = counter[1:0];
     always_comb begin
-        case (i_bit_lines)
+        casex (i_bit_lines)
+            // Using casex to ignore irrelevant bits
             4'b1???: number_input[1:0] = 2'b11; // 3
             4'b01??: number_input[1:0] = 2'b10; // 2
             4'b001?: number_input[1:0] = 2'b01; // 1
