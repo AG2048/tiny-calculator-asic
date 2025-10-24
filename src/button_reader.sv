@@ -20,8 +20,8 @@ module button_reader (
     input  logic       i_eq_pin,
 
     output logic [4:0] o_data,
-    output logic       o_data_valid,
-    input  logic       i_read_ready
+    output logic       o_valid,
+    input  logic       i_ready
 );
     // Decoding logic for word lines scanning
     logic [1:0] counter;
@@ -96,7 +96,7 @@ module button_reader (
         if (!rst_n) begin
             prev_button_pressed_reg <= 1'b0;
         end else begin
-            if (o_data_valid) begin
+            if (o_valid) begin
                 prev_button_pressed_reg <= 1'b0;
             end else if (button_pressed_reg && (counter == 2'b00)) begin
                 prev_button_pressed_reg <= 1'b1;
@@ -107,42 +107,42 @@ module button_reader (
     // Logic to turn on data valid output
     // (When no button pressed in current cycle, but previous cycle had a button press)
     // (On all button release)
-    logic enable_data_valid;
-    assign enable_data_valid = counter == 2'b00 &&
+    logic enable_o_valid;
+    assign enable_o_valid = counter == 2'b00 &&
                                !button_pressed_reg &&
                                prev_button_pressed_reg;
 
     // Output data register
-    logic [4:0] data_read_reg;
+    logic [4:0] o_data_reg;
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            data_read_reg <= 5'b00000;
+            o_data_reg <= 5'b00000;
         end else begin
-            if (!o_data_valid && !enable_data_valid) begin
+            if (!o_valid && !enable_o_valid) begin
                 // Update data only when not valid, and not enabling valid
                 if (op_button_pressed) begin
-                    data_read_reg <= {2'b10, op_input}; // Operation buttons have MSB = 1
+                    o_data_reg <= {2'b10, op_input}; // Operation buttons have MSB = 1
                 end else if (any_button_pressed) begin
-                    data_read_reg <= {1'b0, number_input}; // Number buttons have MSB = 0
+                    o_data_reg <= {1'b0, number_input}; // Number buttons have MSB = 0
                 end
             end
         end
     end
-    assign o_data = data_read_reg;
+    assign o_data = o_data_reg;
 
     // Data valid output register
-    logic data_valid_reg;
+    logic o_valid_reg;
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            data_valid_reg <= 1'b0;
+            o_valid_reg <= 1'b0;
         end else begin
-            if (i_read_ready && o_data_valid) begin
-                data_valid_reg <= 1'b0;
-            end else if (enable_data_valid) begin
-                data_valid_reg <= 1'b1;
+            if (i_ready && o_valid) begin
+                o_valid_reg <= 1'b0;
+            end else if (enable_o_valid) begin
+                o_valid_reg <= 1'b1;
             end
         end
     end
-    assign o_data_valid = data_valid_reg;
+    assign o_valid = o_valid_reg;
 
 endmodule

@@ -52,7 +52,7 @@ module tt_um_ag2048_calculator (
       .rst_n        (rst_n),
 
       .o_word_lines (o_word_lines),
-      .i_word_lines (i_bit_lines),
+      .i_bit_lines  (i_bit_lines),
 
       .i_ac_pin     (i_ac_pin),
       .i_add_pin    (i_add_pin),
