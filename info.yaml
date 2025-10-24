@@ -38,10 +38,10 @@ pinout:
   uo[1]: "Number Pad Word Line 1"
   uo[2]: "Number Pad Word Line 2"
   uo[3]: "Number Pad Word Line 3"
-  uo[4]: "Shift Register Output Data"
-  uo[5]: "Shift Register Output Clock"
-  uo[6]: ""
-  uo[7]: ""
+  uo[4]: "Output Shift Register SER (Data)"
+  uo[5]: "Output Shift Register SRCLK (Shift Clock)"
+  uo[6]: "Output Shift Register RCLK (Latch Clock)"
+  uo[7]: "Error Indicator (Divide by Zero)"
 
   # Bidirectional pins
   uio[0]: "AC Button Input"
