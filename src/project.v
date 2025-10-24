@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2024 Your Name
+ * Copyright (c) 2024 Andy Gong
  * SPDX-License-Identifier: Apache-2.0
  */
 
 `default_nettype none
 
-module tt_um_example (
+module tiny_calculator (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -17,11 +17,56 @@ module tt_um_example (
 );
 
   // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+  assign uo_out[7:4] = 0;
+  assign uio_out     = 0;
+  assign uio_oe[7:6] = 0;
+  
+  // Instantiate the button_reader module
+  wire [4:0] input_value;
+  wire       input_valid;
+  wire       input_ready;
+
+  wire o_word_lines;
+  wire i_bit_lines;
+
+  wire i_ac_pin;
+  wire i_add_pin;
+  wire i_sub_pin;
+  wire i_mul_pin;
+  wire i_div_pin;
+  wire i_eq_pin;
+
+  assign o_word_lines = uo_out[3:0];
+  assign i_bit_lines  = ui_in[3:0];
+
+  assign uio_oe[5:0] = 6'b000000;
+  assign i_ac_pin    = uio_in[0];
+  assign i_add_pin   = uio_in[1];
+  assign i_sub_pin   = uio_in[2];
+  assign i_mul_pin   = uio_in[3];
+  assign i_div_pin   = uio_in[4];
+  assign i_eq_pin    = uio_in[5];
+
+  button_reader br (
+      .clk          (clk),
+      .rst_n        (rst_n),
+
+      .o_word_lines (o_word_lines),
+      .i_word_lines (i_bit_lines),
+
+      .i_ac_pin     (i_ac_pin),
+      .i_add_pin    (i_add_pin),
+      .i_sub_pin    (i_sub_pin),
+      .i_mul_pin    (i_mul_pin),
+      .i_div_pin    (i_div_pin),
+      .i_eq_pin     (i_eq_pin),
+
+      .o_data       (input_value),
+      .o_valid      (input_valid),
+      .i_ready      (input_ready)
+  );
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+  wire _unused = &{ena, ui_in[7:4], uio_in[7:6], 1'b0};
 
 endmodule
