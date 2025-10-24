@@ -36,8 +36,8 @@ module tt_um_ag2048_calculator (
   wire i_div_pin;
   wire i_eq_pin;
 
-  assign o_word_lines = uo_out[3:0];
-  assign i_bit_lines  = ui_in[3:0];
+  assign uo_out[3:0] = o_word_lines;
+  assign i_bit_lines = ui_in[3:0];
 
   assign uio_oe[5:0] = 6'b000000;
   assign i_ac_pin    = uio_in[0];
@@ -66,7 +66,15 @@ module tt_um_ag2048_calculator (
       .i_ready      (input_ready)
   );
 
+  // Instantiate the calculator core (FSM) module
+  // TODO
   assign input_ready = 1'b0; // Always not ready to accept input
+
+  // Instantiate the ALU module
+  // TODO
+
+  // Instantiate the output driver (shift register) module
+  // TODO
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, ui_in[7:4], uio_in[7:6], input_value, input_valid, 1'b0};
