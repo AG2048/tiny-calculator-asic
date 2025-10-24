@@ -26,8 +26,11 @@ module button_reader (
     // Decoding logic for word lines scanning
     logic [1:0] counter;
     logic [3:0] number_input;
-    assign number_input[3:2] = counter[1:0];
     always_comb begin
+        // Assign upper 2 bits to match counter
+        number_input[3:2] = counter[1:0];
+
+        // Assign lower 2 bits based on bit lines
         casez (i_bit_lines)
             // Using casez to ignore irrelevant bits
             4'b1???: number_input[1:0] = 2'b11; // 3
