@@ -69,7 +69,7 @@ module button_reader (
 
     // Logic to check if any button press is detected
     logic any_button_pressed;
-    any_button_pressed = (i_bit_lines != 4'b0000) ||
+    assign any_button_pressed = (i_bit_lines != 4'b0000) ||
                          i_ac_pin || i_add_pin || i_sub_pin ||
                          i_mul_pin || i_div_pin || i_eq_pin;
 
