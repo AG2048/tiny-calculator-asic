@@ -19,6 +19,9 @@ project:
   source_files:
     - "project.v"
     - "button_reader.sv"
+    - "output_driver.sv"
+    - "calculator_core.sv"
+    - "alu.sv"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).

@@ -5,7 +5,7 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = button_reader.sv project.v
+PROJECT_SOURCES = button_reader.sv output_driver.sv calculator_core.sv alu.sv project.v
 
 NUM_SAMPLES ?= 100
 export NUM_SAMPLES
