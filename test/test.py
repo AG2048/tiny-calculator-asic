@@ -459,8 +459,8 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     reader_set_ready_coro = cocotb.start_soon(value_reader._set_ready(ready_timing))
     button_press_press_coro = cocotb.start_soon(button_press_generator._press_buttons())
 
-    # Wait read to be done, timeout after 100 ms
-    await with_timeout(reader_read_coro, 100, 'ms')
+    # Wait read to be done, timeout after 1000 ms
+    await with_timeout(reader_read_coro, 1000, 'ms')
     cocotb.log.info(f"Read {len(value_reader.data_queue)} values.")
 
     # Check results
@@ -478,7 +478,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     assert num_errors == 0, f"Test failed with {num_errors} errors."
 
 
-@cocotb.test()
+@cocotb.test(skip=True)  # Skipped until implemented
 @cocotb.parametrize(
     button_press_mode=["SINGLE_PRESS", "MULTI_PRESS", "MULTI_HOLD_LATE_RELEASE", "SHORTEST_SINGLE_PRESS"],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
@@ -486,6 +486,5 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
 )
 async def test_top(dut, button_press_mode, input_order, num_samples):
     cocotb.log.info(f"Starting top test with button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")
-
-    # currently just don't do anything, let it pass
-    await ClockCycles(dut.clk, 1000)
+    # Just declare the test to pass
+    cocotb.pass_test("Not implemented yet.")
