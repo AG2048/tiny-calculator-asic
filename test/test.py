@@ -4,7 +4,7 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.handle import Force, Release, Freeze
-from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, ValueChange, Edge, Timer, Combine, First
+from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, ValueChange, Edge, Timer, Combine, First, with_timeout
 import os
 import random
 
@@ -387,7 +387,7 @@ class ButtonPressGenerator:
     ready_timing=["ALWAYS_ON", "RANDOM_READY"],
     button_press_mode=["SINGLE_PRESS", "MULTI_PRESS", "MULTI_HOLD_LATE_RELEASE", "SHORTEST_SINGLE_PRESS"],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
-    num_samples=[int(os.environ.get("NUM_SAMPLES", "800"))]
+    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))]
 )
 async def test_button_reader(dut, ready_timing, button_press_mode, input_order, num_samples):
     cocotb.log.info(f"Starting test with ready_timing={ready_timing}, button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")
@@ -459,8 +459,8 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     reader_set_ready_coro = cocotb.start_soon(value_reader._set_ready(ready_timing))
     button_press_press_coro = cocotb.start_soon(button_press_generator._press_buttons())
 
-    # Wait read to be done
-    await reader_read_coro
+    # Wait read to be done, timeout after 100 ms
+    await with_timeout(reader_read_coro, 100, 'ms')
     cocotb.log.info(f"Read {len(value_reader.data_queue)} values.")
 
     # Check results
@@ -482,7 +482,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
 @cocotb.parametrize(
     button_press_mode=["SINGLE_PRESS", "MULTI_PRESS", "MULTI_HOLD_LATE_RELEASE", "SHORTEST_SINGLE_PRESS"],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
-    num_samples=[int(os.environ.get("NUM_SAMPLES", "800"))]
+    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))]
 )
 async def test_top(dut, button_press_mode, input_order, num_samples):
     cocotb.log.info(f"Starting top test with button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")

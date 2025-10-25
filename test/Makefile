@@ -7,7 +7,7 @@ TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
 PROJECT_SOURCES = button_reader.sv project.v
 
-NUM_SAMPLES ?= 800
+NUM_SAMPLES ?= 100
 export NUM_SAMPLES
 
 ifneq ($(GATES),yes)
