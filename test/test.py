@@ -9,7 +9,7 @@ import os
 import random
 
 class ValueReader:
-    def __init__(self, signal_data, signal_ready, signal_valid, clk, ready_mode="ALWAYS_ON", num_reads=800, random_delay_min_cyc=1, random_delay_max_cyc=10, expected_values_list=None):
+    def __init__(self, signal_data, signal_ready, signal_valid, clk, ready_mode="ALWAYS_ON", num_reads=100, random_delay_min_cyc=1, random_delay_max_cyc=10, expected_values_list=None):
         self._signal_data = signal_data
         self._signal_ready = signal_ready
         self._signal_valid = signal_valid
@@ -80,7 +80,7 @@ class ValueReader:
 
 
 class ButtonPressGenerator:
-    def __init__(self, clk, o_word_lines, i_bit_lines, i_ac_pin, i_add_pin, i_sub_pin, i_mul_pin, i_div_pin, i_eq_pin, o_valid=None, button_press_mode="SINGLE_PRESS", input_order="IN_ORDER", num_samples=800, button_hold_random_min_cyc=5, button_hold_random_max_cyc=200, inter_press_gap_random_min_cyc=5, inter_press_gap_random_max_cyc=200):
+    def __init__(self, clk, o_word_lines, i_bit_lines, i_ac_pin, i_add_pin, i_sub_pin, i_mul_pin, i_div_pin, i_eq_pin, o_valid=None, button_press_mode="SINGLE_PRESS", input_order="IN_ORDER", num_samples=100, button_hold_random_min_cyc=5, button_hold_random_max_cyc=200, inter_press_gap_random_min_cyc=5, inter_press_gap_random_max_cyc=200):
         self.clk = clk
         self.o_word_lines = o_word_lines
         self.i_bit_lines = i_bit_lines
@@ -380,6 +380,21 @@ class ButtonPressGenerator:
                 raise ValueError(f"Unknown button_press_mode: {self.button_press_mode}")
 
 
+class OutputDriverMonitor:
+    def __init__(self, output_data_signal, output_sr_clk_signal, output_sr_latch_signal, num_values_to_read=100, expected_values_list=None):
+        self._output_data_signal = output_data_signal
+        self._output_sr_clk_signal = output_sr_clk_signal
+        self._output_sr_latch_signal = output_sr_latch_signal
+        self._num_values_to_read = num_values_to_read
+        self.expected_values_list = expected_values_list
+        self.data_queue = []
+        # TODO: Monitor SRLatch signal, Monitor SRCLK signal on 2 separate coroutines
+
+    async def _monitor_output(self):
+        sr_bits = 0
+        while True:
+            # await RisingEdge
+            pass
 
 
 @cocotb.test(skip=os.environ.get("GATES")=="yes")
@@ -387,9 +402,15 @@ class ButtonPressGenerator:
     ready_timing=["ALWAYS_ON", "RANDOM_READY"],
     button_press_mode=["SINGLE_PRESS", "MULTI_PRESS", "MULTI_HOLD_LATE_RELEASE", "SHORTEST_SINGLE_PRESS"],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
-    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))]
+    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
+    button_hold_random_min_cyc=[5],
+    button_hold_random_max_cyc=[50],
+    inter_press_gap_random_min_cyc=[5],
+    inter_press_gap_random_max_cyc=[50],
+    ready_delay_random_min_cyc=[1],
+    ready_delay_random_max_cyc=[10]
 )
-async def test_button_reader(dut, ready_timing, button_press_mode, input_order, num_samples):
+async def test_button_reader(dut, ready_timing, button_press_mode, input_order, num_samples, button_hold_random_min_cyc, button_hold_random_max_cyc, inter_press_gap_random_min_cyc, inter_press_gap_random_max_cyc, ready_delay_random_min_cyc, ready_delay_random_max_cyc):
     cocotb.log.info(f"Starting test with ready_timing={ready_timing}, button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")
 
     # Collect signals
@@ -412,16 +433,6 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     clock = Clock(clk, 10, unit="us")
     cocotb.start_soon(clock.start())
 
-    # Instantiate ValueReader
-    value_reader = ValueReader(
-        signal_data=o_data,
-        signal_ready=i_ready,
-        signal_valid=o_valid,
-        clk=clk,
-        ready_mode=ready_timing,
-        num_reads=num_samples
-    )
-
     # Instantiate ButtonPressGenerator
     button_press_generator = ButtonPressGenerator(
         clk=clk,
@@ -436,7 +447,24 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
         o_valid=o_valid,
         button_press_mode=button_press_mode,
         input_order=input_order,
-        num_samples=num_samples
+        num_samples=num_samples,
+        button_hold_random_min_cyc=button_hold_random_min_cyc,
+        button_hold_random_max_cyc=button_hold_random_max_cyc,
+        inter_press_gap_random_min_cyc=inter_press_gap_random_min_cyc,
+        inter_press_gap_random_max_cyc=inter_press_gap_random_max_cyc
+    )
+
+    # Instantiate ValueReader
+    value_reader = ValueReader(
+        signal_data=o_data,
+        signal_ready=i_ready,
+        signal_valid=o_valid,
+        clk=clk,
+        ready_mode=ready_timing,
+        num_reads=num_samples,
+        random_delay_min_cyc=ready_delay_random_min_cyc,
+        random_delay_max_cyc=ready_delay_random_max_cyc,
+        expected_values_list=button_press_generator.button_presses_generated
     )
 
     # Reset
@@ -476,6 +504,17 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
             cocotb.log.info(f"Match at index {i}: {expected}")
 
     assert num_errors == 0, f"Test failed with {num_errors} errors."
+
+
+@cocotb.test(skip=os.environ.get("GATES")=="yes")
+@cocotb.parametrize(
+    valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
+    test_2s_complement=[True, False],
+    input_order=["IN_ORDER", "RANDOM_ORDER"],
+    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))]
+)
+async def test_output_decoder():
+    assert 1==2, "Not implemented yet."
 
 
 @cocotb.test(skip=True)  # Skipped until implemented
