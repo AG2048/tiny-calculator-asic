@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
+# SPDX-FileCopyrightText: © 2025 Andy Gong
 # SPDX-License-Identifier: Apache-2.0
 
 import cocotb
@@ -416,7 +416,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     # Collect signals
     clk = dut.clk
     rst_n = dut.rst_n
-    br = dut.user_project.br
+    br = dut.user_project.br_inst
     o_word_lines = br.o_word_lines
     i_bit_lines = br.i_bit_lines
     i_ac_pin = br.i_ac_pin
