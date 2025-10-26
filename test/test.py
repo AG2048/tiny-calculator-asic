@@ -47,6 +47,7 @@ class ButtonValueReader:
         self._num_reads = num_reads
 
     async def _read_values(self):
+        cocotb.log.info(f"ButtonValueReader: Starting to read {self._num_reads} values with ready_mode={self._ready_mode}")
         while True:
             await RisingEdge(self._clk)
             if self._signal_valid.value == 1 and self._signal_ready.value == 1:
