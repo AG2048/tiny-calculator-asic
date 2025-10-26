@@ -171,7 +171,7 @@ class ButtonPressGenerator:
                     if word_lines_val == wl_val:
                         self.bit_line_value |= bl_val
             # Write the bit line value to the output
-            self.i_bit_lines.value = self.bit_line_value
+            self.i_bit_lines.value = Force(self.bit_line_value)
             # cocotb.log.info(f"Set i_bit_lines to {self.bit_line_value} for word_lines {word_lines_val}")
             # Update cycles done
             for digit in self.numbers_pressed_cycles_left.keys():
@@ -184,7 +184,7 @@ class ButtonPressGenerator:
             # If all digits are done, exit
             if len(self.numbers_pressed_cycles_left) == 0:
                 # Force i_bit_lines to 0 before exiting
-                self.i_bit_lines.value = 0b0000
+                self.i_bit_lines.value = Force(0b0000)
                 break
     
     async def _force_op_pins(self, signal_name, hold_cycles):
@@ -373,9 +373,9 @@ class ButtonPressGenerator:
                         await FallingEdge(self.clk)
                         if self.o_word_lines.value == wl_val:
                             break
-                    self.i_bit_lines.value = bl_val
+                    self.i_bit_lines.value = Force(bl_val)
                     await FallingEdge(self.clk)
-                    self.i_bit_lines.value = 0b0000
+                    self.i_bit_lines.value = Force(0b0000)
             else:
                 raise ValueError(f"Unknown button_press_mode: {self.button_press_mode}")
 
@@ -469,17 +469,17 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
 
     # Reset
     dut._log.info("Reset")
-    rst_n.value = 0
+    rst_n.value = Force(0)
     # Set other inputs to default
-    i_bit_lines.value = 0b0000
-    i_ac_pin.value = 0
-    i_add_pin.value = 0
-    i_sub_pin.value = 0
-    i_mul_pin.value = 0
-    i_div_pin.value = 0
-    i_eq_pin.value = 0
+    i_bit_lines.value = Force(0b0000)
+    i_ac_pin.value = Force(0)
+    i_add_pin.value = Force(0)
+    i_sub_pin.value = Force(0)
+    i_mul_pin.value = Force(0)
+    i_div_pin.value = Force(0)
+    i_eq_pin.value = Force(0)
     await ClockCycles(dut.clk, 10)
-    rst_n.value = 1
+    rst_n.value = Force(1)
     await ClockCycles(dut.clk, 10)
 
     # Begin coroutines
