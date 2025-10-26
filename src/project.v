@@ -112,9 +112,9 @@ module tt_um_ag2048_calculator (
   );
 
   // Instantiate the calculator core (FSM) module
-  calculator_core cc_inst #(
+  calculator_core #(
       .DATA_WIDTH(DATA_WIDTH)
-  ) (
+  ) cc_inst (
       .clk                 (clk),
       .rst_n               (rst_n),
 
@@ -148,9 +148,9 @@ module tt_um_ag2048_calculator (
   );
 
   // Instantiate the ALU module
-  alu alu_inst #(
+  alu #(
       .DATA_WIDTH(DATA_WIDTH)
-  ) (
+  ) alu_inst (
       .clk                (clk),
       .rst_n              (rst_n),
 
@@ -168,10 +168,10 @@ module tt_um_ag2048_calculator (
   );
 
   // Instantiate the output driver (shift register) module
-  output_driver od_inst #(
+  output_driver #(
       .DATA_WIDTH(DATA_WIDTH),
       .NUM_7_SEG_DISPLAYS(NUM_7_SEG_DISPLAYS)
-  ) (
+  ) od_inst (
       .clk        (clk),
       .rst_n      (rst_n),
 
