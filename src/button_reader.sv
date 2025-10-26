@@ -6,22 +6,22 @@
 `default_nettype none
 
 module button_reader (
-    input  logic     clk,
-    input  logic     rst_n,
+    input  logic       clk,
+    input  logic       rst_n,
 
     output logic [3:0] o_word_lines,
     input  logic [3:0] i_bit_lines,
 
-    input  logic     i_ac_pin,
-    input  logic     i_add_pin,
-    input  logic     i_sub_pin,
-    input  logic     i_mul_pin,
-    input  logic     i_div_pin,
-    input  logic     i_eq_pin,
+    input  logic       i_ac_pin,
+    input  logic       i_add_pin,
+    input  logic       i_sub_pin,
+    input  logic       i_mul_pin,
+    input  logic       i_div_pin,
+    input  logic       i_eq_pin,
 
     output logic [4:0] o_data,
-    output logic     o_valid,
-    input  logic     i_ready
+    output logic       o_valid,
+    input  logic       i_ready
 );
   /* 
     Button reader module, scans a 4x4 button matrix plus 6 operation buttons.
