@@ -50,7 +50,6 @@ class ButtonValueReader:
         cocotb.log.info(f"ButtonValueReader: Starting to read {self._num_reads} values with ready_mode={self._ready_mode}")
         while True:
             await RisingEdge(self._clk)
-            cocotb.log.info(f"Ready: {self._signal_ready.value}, Valid: {self._signal_valid.value}")
             if self._signal_valid.value == 1 and self._signal_ready.value == 1:
                 data = self._signal_data.value
                 decoded_data = self.value_decoded.get(int(data), f"UNKNOWN({int(data)})")
@@ -415,7 +414,7 @@ class OutputDriverMonitor:
     inter_press_gap_random_max_cyc=[50],
     ready_delay_random_min_cyc=[1],
     ready_delay_random_max_cyc=[10],
-    timeout_ms=[5000]
+    timeout_ms=[1000]
 )
 async def test_button_reader(dut, ready_timing, button_press_mode, input_order, num_samples, button_hold_random_min_cyc, button_hold_random_max_cyc, inter_press_gap_random_min_cyc, inter_press_gap_random_max_cyc, ready_delay_random_min_cyc, ready_delay_random_max_cyc, timeout_ms):
     cocotb.log.info(f"Starting test with ready_timing={ready_timing}, button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")
@@ -523,7 +522,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     test_2s_complement=[True, False],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
-    timeout_ms=[5000]
+    timeout_ms=[1000]
 )
 async def test_output_driver():
     assert 1==2, "Not implemented yet."
@@ -537,7 +536,7 @@ async def test_output_driver():
     input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
-    timeout_ms=[5000]
+    timeout_ms=[1000]
 )
 async def test_alu():
     assert 1==2, "Not implemented yet."
@@ -548,7 +547,7 @@ async def test_alu():
     button_press_mode=["SINGLE_PRESS", "MULTI_PRESS", "MULTI_HOLD_LATE_RELEASE", "SHORTEST_SINGLE_PRESS"],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
-    timeout_ms=[5000]
+    timeout_ms=[1000]
 )
 async def test_top(dut, button_press_mode, input_order, num_samples):
     cocotb.log.info(f"Starting top test with button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")
