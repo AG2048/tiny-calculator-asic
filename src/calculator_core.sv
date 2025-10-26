@@ -41,6 +41,6 @@ module calculator_core #(
 );
 // Temp assign all input to 0, tie all output to & _unused
 assign {o_alu_input_a, o_alu_input_b, o_alu_input_op, o_alu_input_signed, o_alu_input_valid, o_alu_result_ready, o_add_state_display, o_sub_state_display, o_mul_state_display, o_div_state_display, o_display_data, o_display_2s_comp, o_display_valid} = '0;
-assign o_button_ready = &{clk, rst_n, i_button_data, i_button_valid, i_2s_comp_mode, i_alu_result, i_alu_error, i_alu_result_valid, i_display_ready, i_display_done};
+assign o_button_ready = &{clk, rst_n, i_button_data, i_button_valid, i_2s_comp_mode, i_alu_result, i_alu_error, i_alu_result_valid, i_display_ready, i_display_done, i_alu_input_ready};
 
 endmodule
