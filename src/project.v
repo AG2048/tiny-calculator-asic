@@ -17,7 +17,7 @@ module tt_um_ag2048_calculator (
 );
 
   // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out[7:4] = 0;
+  
   assign uio_out     = 0;
   assign uio_oe[7:6] = 0;
   
@@ -68,7 +68,7 @@ module tt_um_ag2048_calculator (
 
   // Instantiate the calculator core (FSM) module
   // TODO
-  assign input_ready = 1'b0; // Always not ready to accept input
+  assign input_ready = ui_in[7]; // Always not ready to accept input // Placeholder to not optimize away
 
   // Instantiate the ALU module
   // TODO
@@ -77,6 +77,7 @@ module tt_um_ag2048_calculator (
   // TODO
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, ui_in[7:4], uio_in[7:6], input_value, input_valid, 1'b0};
+  assign uo_out[7:4] = &{input_value, input_valid}; // Prevent unused output warnings, and don't optimize away
+  wire _unused = &{ena, ui_in[6:4], uio_in[7:6], input_value, input_valid, 1'b0};
 
 endmodule
