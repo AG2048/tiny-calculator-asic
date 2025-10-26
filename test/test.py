@@ -50,7 +50,6 @@ class ButtonValueReader:
         cocotb.log.info(f"ButtonValueReader: Starting to read {self._num_reads} values with ready_mode={self._ready_mode}")
         while True:
             await RisingEdge(self._clk)
-            cocotb.log.info(f"ButtonValueReader: signal_valid={self._signal_valid.value}, signal_ready={self._signal_ready.value}, signal_data={self._signal_data.value}")
             if self._signal_valid.value == 1 and self._signal_ready.value == 1:
                 data = self._signal_data.value
                 decoded_data = self.value_decoded.get(int(data), f"UNKNOWN({int(data)})")
@@ -180,7 +179,7 @@ class ButtonPressGenerator:
             # Update cycles done
             for digit in self.numbers_pressed_cycles_left.keys():
                 self.numbers_pressed_cycles_left[digit][1] += 1
-                if self.numbers_pressed_cycles_left[digit][1] >= self.numbers_pressed_cycles_left[digit][0]:
+                if self.numbers_pressed_cycles_left[digit][1] > self.numbers_pressed_cycles_left[digit][0]:
                     digits_done.append(digit)
             # Remove done digits
             for digit in digits_done:
