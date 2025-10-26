@@ -100,7 +100,7 @@ module button_reader (
   logic any_button_pressed;
   assign any_button_pressed = (i_bit_lines != 4'b0000) ||
                               i_ac_pin || i_add_pin || i_sub_pin ||
-                              i_mul_pin || i_div_pin || i_eq_pin;
+                              i_mul_pin || i_div_pin || i_eq_pin || i_neg_pin;
 
   // Register to retain if a button press is made in the current scan cycle
   // (A button press occurred in previous cycle if value is 1 at counter == 0)
