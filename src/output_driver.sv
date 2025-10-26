@@ -9,9 +9,18 @@ module output_driver #(
     parameter DATA_WIDTH = 16,
     parameter NUM_7_SEG_DISPLAYS = 5
 )(
-    input  wire                   clk,            // clock
-    input  wire                   rst_n,          // reset_n - low to reset
-    // Add other ports as needed
+    input  logic                  clk,
+    input  logic                  rst_n,
+
+    input  logic [DATA_WIDTH-1:0] i_data,
+    input  logic                  i_2s_comp,  // Indicates if i_data is in 2's complement format
+    input  logic                  i_valid,
+    output logic                  o_ready,
+    output logic                  o_done,     // Low when data is being shifted out
+
+    output logic                  o_sr_data,
+    output logic                  o_sr_clk,
+    output logic                  o_sr_latch
 );
 
 

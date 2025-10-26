@@ -18,6 +18,7 @@ module button_reader (
     input  logic       i_mul_pin,
     input  logic       i_div_pin,
     input  logic       i_eq_pin,
+    input  logic       i_neg_pin,
 
     output logic [4:0] o_data,
     output logic       o_valid,
@@ -68,7 +69,7 @@ module button_reader (
   logic [2:0] op_input;
   logic     op_button_pressed;
   assign op_button_pressed = i_ac_pin || i_add_pin || i_sub_pin ||
-                             i_mul_pin || i_div_pin || i_eq_pin;
+                             i_mul_pin || i_div_pin || i_eq_pin || i_neg_pin;
   always_comb begin
     op_input = 3'b000;
     if      (i_add_pin) op_input = 3'b000; // +
@@ -77,6 +78,7 @@ module button_reader (
     else if (i_div_pin) op_input = 3'b011; // /
     else if (i_eq_pin)  op_input = 3'b100; // =
     else if (i_ac_pin)  op_input = 3'b101; // AC
+    else if (i_neg_pin) op_input = 3'b110; // Negative
   end
 
   // 2-bit counter to scan the 4 word lines in sequence
