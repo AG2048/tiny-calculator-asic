@@ -68,7 +68,7 @@ module tt_um_ag2048_calculator (
   assign uio_oe       = 8'b00111100;          // uio[2:5] are outputs, others are inputs
   assign uio_out[7:6] = 2'b00;                // Unused output pins
   assign uio_out[1:0] = 2'b00;                // Unused output pins
-  wire   _unused      = &{uio_in[5:2], 1'b0}; // Prevent unused input warnings
+  wire   _unused      = &{uio_in[5:2], ena, 1'b0}; // Prevent unused input warnings
   // Assign signals to Output Pins
   assign uo_out[3:0] = o_word_lines;
   assign uio_out[2]  = o_add_state_display;
