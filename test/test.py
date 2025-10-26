@@ -8,7 +8,7 @@ from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, ValueChange, E
 import os
 import random
 
-class ValueReader:
+class ButtonValueReader:
     def __init__(self, signal_data, signal_ready, signal_valid, clk, ready_mode="ALWAYS_ON", num_reads=100, random_delay_min_cyc=1, random_delay_max_cyc=10, expected_values_list=None):
         self._signal_data = signal_data
         self._signal_ready = signal_ready
@@ -41,7 +41,8 @@ class ValueReader:
             0b10010: '*',
             0b10011: '/',
             0b10100: '=',
-            0b10101: 'AC'
+            0b10101: 'AC',
+            0b10110: '(-)'
         }
         self._num_reads = num_reads
 
@@ -55,8 +56,8 @@ class ValueReader:
                 if self.expected_values_list is not None:
                     expected_data = self.expected_values_list[len(self.data_queue) - 1]
                     if decoded_data != expected_data:
-                        cocotb.log.info(f"ValueReader: Mismatch at read {len(self.data_queue)}: expected {expected_data}, got {decoded_data}")
-                cocotb.log.info(f"ValueReader: Read data {decoded_data} ({len(self.data_queue)}/{self._num_reads})")
+                        cocotb.log.info(f"ButtonValueReader: Mismatch at read {len(self.data_queue)}: expected {expected_data}, got {decoded_data}")
+                cocotb.log.info(f"ButtonValueReader: Read data {decoded_data} ({len(self.data_queue)}/{self._num_reads})")
                 if len(self.data_queue) >= self._num_reads:
                     break
 
@@ -80,7 +81,7 @@ class ValueReader:
 
 
 class ButtonPressGenerator:
-    def __init__(self, clk, o_word_lines, i_bit_lines, i_ac_pin, i_add_pin, i_sub_pin, i_mul_pin, i_div_pin, i_eq_pin, o_valid=None, button_press_mode="SINGLE_PRESS", input_order="IN_ORDER", num_samples=100, button_hold_random_min_cyc=5, button_hold_random_max_cyc=200, inter_press_gap_random_min_cyc=5, inter_press_gap_random_max_cyc=200):
+    def __init__(self, clk, o_word_lines, i_bit_lines, i_ac_pin, i_add_pin, i_sub_pin, i_mul_pin, i_div_pin, i_eq_pin, i_neg_pin, o_valid=None, button_press_mode="SINGLE_PRESS", input_order="IN_ORDER", num_samples=100, button_hold_random_min_cyc=5, button_hold_random_max_cyc=200, inter_press_gap_random_min_cyc=5, inter_press_gap_random_max_cyc=200):
         self.clk = clk
         self.o_word_lines = o_word_lines
         self.i_bit_lines = i_bit_lines
@@ -90,6 +91,7 @@ class ButtonPressGenerator:
         self.i_mul_pin = i_mul_pin
         self.i_div_pin = i_div_pin
         self.i_eq_pin = i_eq_pin
+        self.i_neg_pin = i_neg_pin
         self.o_valid = o_valid  # Used to make sure press only happen when not valid
         self.button_press_mode = button_press_mode
         self.input_order = input_order
@@ -105,7 +107,7 @@ class ButtonPressGenerator:
             "+",
             "-", "*",
             "/", "=",
-            "AC",
+            "AC", "(-)",
             "3",
             "2",
             "1",
@@ -194,7 +196,8 @@ class ButtonPressGenerator:
             "-": self.i_sub_pin,
             "*": self.i_mul_pin,
             "/": self.i_div_pin,
-            "=": self.i_eq_pin
+            "=": self.i_eq_pin,
+            "(-)": self.i_neg_pin
         }
         if signal_name not in pin_map:
             raise ValueError(f"Signal {signal_name} is not an operator pin.")
@@ -277,7 +280,7 @@ class ButtonPressGenerator:
                         0
                     ]
                     # Add lower priority digits
-                    for other_signal in self.possible_signals[main_index+1:((main_index-6)//4)*4 + 6 + 4]: # up to next value on same word line
+                    for other_signal in self.possible_signals[main_index+1:((main_index-7)//4)*4 + 7 + 4]: # up to next value on same word line
                         if other_signal in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"]:
                             if random.choice([True, False]):
                                 self.numbers_pressed_cycles_left[other_signal] = [
@@ -292,7 +295,7 @@ class ButtonPressGenerator:
                     main_index = self.possible_signals.index(signal_name)
                     op_pins = [signal_name]
                     for other_signal in self.possible_signals[main_index+1:]: # All lower priority
-                        if other_signal in ["AC", "+", "-", "*", "/", "="]:
+                        if other_signal in ["AC", "+", "-", "*", "/", "=", "(-)"]:
                             if random.choice([True, False]):
                                 op_pins.append(other_signal)
                         else:
@@ -352,7 +355,7 @@ class ButtonPressGenerator:
                 else:
                     await ClockCycles(self.clk, 100)  # Wait 100 cycles if no o_valid provided
                 # If op, press for 1 cycle after a falling edge
-                if signal_name in ["AC", "+", "-", "*", "/", "="]:
+                if signal_name in ["AC", "+", "-", "*", "/", "=", "(-)"]:
                     await FallingEdge(self.clk)
                     pin_map = {
                         "AC": self.i_ac_pin,
@@ -360,7 +363,8 @@ class ButtonPressGenerator:
                         "-": self.i_sub_pin,
                         "*": self.i_mul_pin,
                         "/": self.i_div_pin,
-                        "=": self.i_eq_pin
+                        "=": self.i_eq_pin,
+                        "(-)": self.i_neg_pin
                     }
                     pin = pin_map[signal_name]
                     pin.value = Force(1)
@@ -408,9 +412,10 @@ class OutputDriverMonitor:
     inter_press_gap_random_min_cyc=[5],
     inter_press_gap_random_max_cyc=[50],
     ready_delay_random_min_cyc=[1],
-    ready_delay_random_max_cyc=[10]
+    ready_delay_random_max_cyc=[10],
+    timeout_ms=[5000]
 )
-async def test_button_reader(dut, ready_timing, button_press_mode, input_order, num_samples, button_hold_random_min_cyc, button_hold_random_max_cyc, inter_press_gap_random_min_cyc, inter_press_gap_random_max_cyc, ready_delay_random_min_cyc, ready_delay_random_max_cyc):
+async def test_button_reader(dut, ready_timing, button_press_mode, input_order, num_samples, button_hold_random_min_cyc, button_hold_random_max_cyc, inter_press_gap_random_min_cyc, inter_press_gap_random_max_cyc, ready_delay_random_min_cyc, ready_delay_random_max_cyc, timeout_ms):
     cocotb.log.info(f"Starting test with ready_timing={ready_timing}, button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")
 
     # Collect signals
@@ -425,6 +430,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     i_mul_pin = br.i_mul_pin
     i_div_pin = br.i_div_pin
     i_eq_pin = br.i_eq_pin
+    i_neg_pin = br.i_neg_pin
     o_data = br.o_data
     o_valid = br.o_valid
     i_ready = br.i_ready
@@ -444,6 +450,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
         i_mul_pin=i_mul_pin,
         i_div_pin=i_div_pin,
         i_eq_pin=i_eq_pin,
+        i_neg_pin=i_neg_pin,
         o_valid=o_valid,
         button_press_mode=button_press_mode,
         input_order=input_order,
@@ -455,7 +462,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     )
 
     # Instantiate ValueReader
-    value_reader = ValueReader(
+    value_reader = ButtonValueReader(
         signal_data=o_data,
         signal_ready=i_ready,
         signal_valid=o_valid,
@@ -478,6 +485,8 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     i_mul_pin.value = Force(0)
     i_div_pin.value = Force(0)
     i_eq_pin.value = Force(0)
+    i_neg_pin.value = Force(0)
+    i_ready.value = Force(0)
     await ClockCycles(dut.clk, 10)
     rst_n.value = Force(1)
     await ClockCycles(dut.clk, 10)
@@ -488,7 +497,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     button_press_press_coro = cocotb.start_soon(button_press_generator._press_buttons())
 
     # Wait read to be done, timeout after 1000 ms
-    await with_timeout(reader_read_coro, 1000, 'ms')
+    await with_timeout(reader_read_coro, timeout_ms, 'ms')
     cocotb.log.info(f"Read {len(value_reader.data_queue)} values.")
 
     # Check results
@@ -511,19 +520,36 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     test_2s_complement=[True, False],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
-    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))]
+    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
+    timeout_ms=[5000]
 )
-async def test_output_decoder():
+async def test_output_driver():
     assert 1==2, "Not implemented yet."
 
 
-@cocotb.test(skip=True)  # Skipped until implemented
+@cocotb.test(skip=os.environ.get("GATES")=="yes")
+@cocotb.parametrize(
+    test_2s_complement=[True, False],
+    operation_sequence=["SEQUENTIAL_OPS", "RANDOM_OPS"],
+    value_input_order=["IN_ORDER", "RANDOM_ORDER"],
+    input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
+    output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
+    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
+    timeout_ms=[5000]
+)
+async def test_alu():
+    assert 1==2, "Not implemented yet."
+
+
+@cocotb.test()  # Skipped until implemented
 @cocotb.parametrize(
     button_press_mode=["SINGLE_PRESS", "MULTI_PRESS", "MULTI_HOLD_LATE_RELEASE", "SHORTEST_SINGLE_PRESS"],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
-    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))]
+    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
+    timeout_ms=[5000]
 )
 async def test_top(dut, button_press_mode, input_order, num_samples):
     cocotb.log.info(f"Starting top test with button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")
-    # Just declare the test to pass
-    cocotb.pass_test("Not implemented yet.")
+    # This test should generate random input sequences, and calculate expected output sequences on 7-seg display
+    # Just declare the test to fail
+    assert 1==2, "Not implemented yet."
