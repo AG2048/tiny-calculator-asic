@@ -50,6 +50,7 @@ class ButtonValueReader:
         cocotb.log.info(f"ButtonValueReader: Starting to read {self._num_reads} values with ready_mode={self._ready_mode}")
         while True:
             await RisingEdge(self._clk)
+            cocotb.log.info(f"ButtonValueReader: signal_valid={self._signal_valid.value}, signal_ready={self._signal_ready.value}, signal_data={self._signal_data.value}")
             if self._signal_valid.value == 1 and self._signal_ready.value == 1:
                 data = self._signal_data.value
                 decoded_data = self.value_decoded.get(int(data), f"UNKNOWN({int(data)})")
