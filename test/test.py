@@ -82,7 +82,7 @@ class ButtonValueReader:
 
 
 class ButtonPressGenerator:
-    def __init__(self, clk, o_word_lines, i_bit_lines, i_ac_pin, i_add_pin, i_sub_pin, i_mul_pin, i_div_pin, i_eq_pin, i_neg_pin, o_valid=None, button_press_mode="SINGLE_PRESS", input_order="IN_ORDER", num_samples=100, button_hold_random_min_cyc=5, button_hold_random_max_cyc=200, inter_press_gap_random_min_cyc=5, inter_press_gap_random_max_cyc=200):
+    def __init__(self, clk, o_word_lines, i_bit_lines, i_ac_pin, i_add_pin, i_sub_pin, i_mul_pin, i_div_pin, i_eq_pin, i_neg_pin, o_valid=None, button_press_mode="SINGLE_PRESS", input_order="IN_ORDER", num_samples=100, button_hold_random_min_cyc=5, button_hold_random_max_cyc=200, inter_press_gap_random_min_cyc=5, inter_press_gap_random_max_cyc=200, no_valid_delay_cyc=100):
         self.clk = clk
         self.o_word_lines = o_word_lines
         self.i_bit_lines = i_bit_lines
@@ -101,6 +101,7 @@ class ButtonPressGenerator:
         self.button_hold_random_max_cyc = button_hold_random_max_cyc
         self.inter_press_gap_random_min_cyc = inter_press_gap_random_min_cyc
         self.inter_press_gap_random_max_cyc = inter_press_gap_random_max_cyc
+        self.no_valid_delay_cyc = no_valid_delay_cyc
         self.bit_line_value = 0b0000  # this value is OR'd by all drivers after rising edge, and centrally written to after falling edge and cleared to 0
         self.numbers_pressed_cycles_left = {} # {"digit": [total_cycles, cycles_done]}
         # Order in possible_signals is also the hierachy of priority.
@@ -160,7 +161,7 @@ class ButtonPressGenerator:
                 else:
                     valid_low_cycles = 0
         else:
-            await ClockCycles(self.clk, 100)  # Wait 100 cycles if no o_valid provided
+            await ClockCycles(self.clk, self.no_valid_delay_cyc)  # Wait 100 cycles if no o_valid provided
         # Write to i_bit_lines based on numbers_pressed_cycles_left
         while True:
             await FallingEdge(self.clk)
@@ -214,7 +215,7 @@ class ButtonPressGenerator:
                 else:
                     valid_low_cycles = 0
         else:
-            await ClockCycles(self.clk, 100)  # Wait 100 cycles if no o_valid provided
+            await ClockCycles(self.clk, self.no_valid_delay_cyc)  # Wait 100 cycles if no o_valid provided
         # Force the pin high for a random hold time
         await FallingEdge(self.clk)
         pin.value = Force(1)
@@ -354,7 +355,7 @@ class ButtonPressGenerator:
                         else:
                             valid_low_cycles = 0
                 else:
-                    await ClockCycles(self.clk, 100)  # Wait 100 cycles if no o_valid provided
+                    await ClockCycles(self.clk, self.no_valid_delay_cyc)  # Wait 100 cycles if no o_valid provided
                 # If op, press for 1 cycle after a falling edge
                 if signal_name in ["AC", "+", "-", "*", "/", "=", "(-)"]:
                     await FallingEdge(self.clk)
@@ -480,13 +481,13 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     rst_n.value = Force(0)
     # Set other inputs to default
     i_bit_lines.value = Force(0b0000)
-    i_ac_pin.value = Force(0)
-    i_add_pin.value = Force(0)
-    i_sub_pin.value = Force(0)
-    i_mul_pin.value = Force(0)
-    i_div_pin.value = Force(0)
-    i_eq_pin.value = Force(0)
-    i_neg_pin.value = Force(0)
+    i_ac_pin.value = 0
+    i_add_pin.value = 0
+    i_sub_pin.value = 0
+    i_mul_pin.value = 0
+    i_div_pin.value = 0
+    i_eq_pin.value = 0
+    i_neg_pin.value = 0
     i_ready.value = Force(0)
     await ClockCycles(dut.clk, 10)
     rst_n.value = Force(1)
@@ -497,8 +498,8 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     reader_set_ready_coro = cocotb.start_soon(value_reader._set_ready(ready_timing))
     button_press_press_coro = cocotb.start_soon(button_press_generator._press_buttons())
 
-    # Wait read to be done, timeout after 1000 ms
-    await with_timeout(reader_read_coro, timeout_ms, 'ms')
+    # Wait read to be done, timeout after timeout_ms ms
+    await First(reader_read_coro, Timer(timeout_ms, unit='ms'))
     cocotb.log.info(f"Read {len(value_reader.data_queue)} values.")
 
     # Check results
@@ -506,7 +507,12 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     received_values = value_reader.data_queue
 
     num_errors = 0
-    for i, (expected, received) in enumerate(zip(expected_presses, received_values)):
+    for i, expected in enumerate(expected_presses):
+        if i >= len(received_values):
+            cocotb.log.error(f"Missing received value at index {i}: expected {expected}, got nothing")
+            num_errors += 1
+            continue
+        received = received_values[i]
         if expected != received:
             cocotb.log.error(f"Mismatch at index {i}: expected {expected}, got {received}")
             num_errors += 1
