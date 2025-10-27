@@ -24,7 +24,7 @@ module alu #(
     input  logic                  i_alu_result_ready
 );
 // Temp assign all input to 0, tie all output to & _unused
-assign {o_alu_result, o_alu_result_valid, o_alu_input_ready} = '0;
-assign o_alu_error = &{clk, rst_n, i_alu_input_a, i_alu_input_b, i_alu_input_op, i_alu_input_signed, i_alu_input_valid, i_alu_result_ready};
+assign {o_alu_result, o_alu_result_valid, o_alu_input_ready, o_alu_error} = '0;
+logic _unused = &{clk, rst_n, i_alu_input_a, i_alu_input_b, i_alu_input_op, i_alu_input_signed, i_alu_input_valid, i_alu_result_ready};
 
 endmodule

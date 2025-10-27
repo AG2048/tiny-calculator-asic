@@ -23,7 +23,7 @@ module output_driver #(
     output logic                  o_sr_latch
 );
 // Temp assign all input to 0, tie all output to & _unused
-assign {o_done, o_sr_data, o_sr_clk, o_sr_latch} = '0;
-assign o_ready = &{clk, rst_n, i_data, i_2s_comp, i_valid};
+assign {o_done, o_sr_data, o_sr_clk, o_sr_latch, o_ready} = '0;
+logic _unused = &{clk, rst_n, i_data, i_2s_comp, i_valid};
 
 endmodule
