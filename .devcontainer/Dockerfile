@@ -1,4 +1,4 @@
-ARG VARIANT=ubuntu-22.04
+ARG VARIANT=ubuntu-24.04
 FROM mcr.microsoft.com/vscode/devcontainers/base:${VARIANT}
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -15,13 +15,14 @@ RUN git clone https://github.com/TinyTapeout/tt-support-tools /ttsetup/tt-suppor
 COPY test/requirements.txt /ttsetup/test_requirements.txt
 COPY .devcontainer/copy_tt_support_tools.sh /ttsetup
 
-RUN pip3 install -r /ttsetup/test_requirements.txt -r /ttsetup/tt-support-tools/requirements.txt
+RUN python -m venv /ttsetup/venv
+RUN /ttsetup/venv/bin/pip install -r /ttsetup/test_requirements.txt -r /ttsetup/tt-support-tools/requirements.txt
 
 # Install verible (for formatting)
 RUN umask 022 && \
-    curl -L https://github.com/chipsalliance/verible/releases/download/v0.0-3795-gf4d72375/verible-v0.0-3795-gf4d72375-linux-static-x86_64.tar.gz | \
+    curl -L https://github.com/chipsalliance/verible/releases/download/v0.0-4023-gc1271a00/verible-v0.0-4023-gc1271a00-linux-static-x86_64.tar.gz | \
     tar zxf - -C /usr/local --strip-components=1 && \
     chmod 755 /usr/local/bin
 
 # Install LibreLane
-RUN pip3 install librelane==2.4.2
+RUN /ttsetup/venv/bin/pip install librelane==2.4.2
