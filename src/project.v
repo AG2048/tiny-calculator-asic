@@ -40,7 +40,7 @@ module tt_um_ag2048_calculator (
   wire [DATA_WIDTH-1:0] alu_input_a;
   wire [DATA_WIDTH-1:0] alu_input_b;
   wire [1:0]            alu_input_op;
-  wire                  alu_input_signed;
+  wire                  alu_input_signed; // TODO: Might be just tied to i_2s_comp_mode_pin
   wire                  alu_input_valid;
   wire                  alu_input_ready;
 
@@ -57,7 +57,7 @@ module tt_um_ag2048_calculator (
   wire [DATA_WIDTH-1:0] output_value;
   wire                  output_valid;
   wire                  output_ready;
-  wire                  output_2s_comp;
+  wire                  output_2s_comp; // TODO: Might be just tied to i_2s_comp_mode_pin
   wire                  output_done;
 
   wire                  o_sr_data;
