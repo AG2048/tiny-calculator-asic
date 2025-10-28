@@ -7,6 +7,9 @@ TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
 PROJECT_SOURCES = button_reader.sv output_driver.sv calculator_core.sv alu.sv project.v
 
+# Enable waveform
+WAVES ?= 1
+
 NUM_SAMPLES ?= 100
 TIMEOUT_MS ?= 1000
 export NUM_SAMPLES TIMEOUT_MS
