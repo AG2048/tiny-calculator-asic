@@ -23,7 +23,31 @@ module alu #(
     output logic                  o_alu_result_valid,
     input  logic                  i_alu_result_ready
 );
-  // ALU module that performs basic arithmetic operations: ADD, SUB, MUL, DIV
+  /*
+    ALU module that performs + - * / operations.
+
+    Input follows a valid-ready handshake protocol.
+    At input (i_ready && i_valid), loads:
+        i_alu_input_a: first operand
+        i_alu_input_b: second operand
+        i_alu_input_op: operation
+        i_alu_input_signed: signed/unsigned for DIV only (MUL outputs same width as inputs, so signed/unsigned doesn't matter) TODO: may consider adding MUL bits later
+          Sign of inputs are also recorded at input time
+    Div by zero error is detected at input time, will immediately output a random number with o_alu_error high at output time.
+
+    ADD/SUB: 1 cycle operation using a full adder
+    MUL:     DATA_WIDTH cycle operation by shift-and-add algorithm (TODO: currently 1 cycle for placeholder)
+    DIV:     DATA_WIDTH cycle operation by TODO algorithm (TODO: currently 1 cycle for placeholder)
+             Division result may be sign flipped at the end based on input signs.
+
+    All operation can use the same full adder. 
+
+    Output follows a valid-ready handshake protocol.
+    When outputting result, o_alu_result_valid is high, and o_alu_error is high if error occurred (e.g., div by zero).
+
+    input ready is only high when ALU is ready to accept new inputs (i.e., not busy processing previous inputs).
+    output valid is only high when result is ready to be read. 
+  */
   // TODO: this is mostly a placeholder implementation, replace with actual multi-cycle implementations for MUL and DIV later
 
   typedef enum logic [2:0] {
