@@ -501,6 +501,8 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
 
     # Wait read to be done, timeout after timeout_ms ms
     await First(reader_read_coro, Timer(timeout_ms, unit='ms'))
+    if not reader_read_coro.done():
+        cocotb.log.error("Test timed out waiting for value reader to finish.")
     cocotb.log.info(f"Read {len(value_reader.data_queue)} values.")
 
     # Check results
@@ -673,6 +675,8 @@ async def test_alu(dut, test_2s_complement, input_value_range_width, operation_s
 
     # Wait for monitor to finish or timeout
     await First(monitor_outputs_coro, Timer(timeout_ms, unit='ms'))
+    if not monitor_outputs_coro.done():
+        cocotb.log.error("Test timed out waiting for output monitor to finish.")
     results = monitor_outputs_coro.result()
     cocotb.log.info(f"Monitor results: {results}")
 
