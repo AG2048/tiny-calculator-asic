@@ -440,6 +440,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     # Set the clock period to 10 us (100 KHz)
     clock = Clock(clk, 10, unit="us")
     cocotb.start_soon(clock.start())
+    await ClockCycles(dut.clk, 10) # Wait 10 cycles for stable clock
 
     # Instantiate ButtonPressGenerator
     button_press_generator = ButtonPressGenerator(
@@ -481,13 +482,13 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     rst_n.value = Force(0)
     # Set other inputs to default
     i_bit_lines.value = Force(0b0000)
-    i_ac_pin.value = 0
-    i_add_pin.value = 0
-    i_sub_pin.value = 0
-    i_mul_pin.value = 0
-    i_div_pin.value = 0
-    i_eq_pin.value = 0
-    i_neg_pin.value = 0
+    i_ac_pin.value = Force(0)
+    i_add_pin.value = Force(0)
+    i_sub_pin.value = Force(0)
+    i_mul_pin.value = Force(0)
+    i_div_pin.value = Force(0)
+    i_eq_pin.value = Force(0)
+    i_neg_pin.value = Force(0)
     i_ready.value = Force(0)
     await ClockCycles(dut.clk, 10)
     rst_n.value = Force(1)
@@ -536,19 +537,199 @@ async def test_output_driver():
 
 @cocotb.test(skip=os.environ.get("GATES")=="yes")
 @cocotb.parametrize(
-    test_2s_complement=[True, False],
+    test_only_certain_ops=["+", "-", "*", "/", "ALL"],
+    test_2s_complement=[False, True],
+    input_value_range_width=[4, 8, 16], 
     operation_sequence=["SEQUENTIAL_OPS", "RANDOM_OPS"],
-    value_input_order=["IN_ORDER", "RANDOM_ORDER"],
     input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
-    timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))]
+    timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
+    signal_width=[16]  # Currently only 16 is supported
 )
-async def test_alu():
-    assert 1==2, "Not implemented yet."
+async def test_alu(dut, test_2s_complement, input_value_range_width, operation_sequence, test_only_certain_ops, input_valid_timing, output_ready_timing, num_samples, timeout_ms, signal_width):
+    alu = dut.user_project.alu_inst
+    cocotb.log.info(f"Starting ALU test with test_2s_complement={test_2s_complement}, operation_sequence={operation_sequence}, input_valid_timing={input_valid_timing}, output_ready_timing={output_ready_timing}, num_samples={num_samples}")
+
+    # Initialize signals
+    clk = dut.clk
+    rst_n = dut.rst_n
+    alu_input_a = alu.i_alu_input_a
+    alu_input_b = alu.i_alu_input_b
+    alu_op = alu.i_alu_input_op
+    input_signed = alu.i_alu_input_signed
+    input_valid = alu.i_alu_input_valid
+    input_ready = alu.o_alu_input_ready
+    output_result = alu.o_alu_result
+    output_error = alu.o_alu_error
+    output_valid = alu.o_alu_result_valid
+    output_ready = alu.i_alu_result_ready
+
+    # Set the clock period to 10 us (100 KHz)
+    clock = Clock(clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+    await ClockCycles(dut.clk, 10) # Wait 10 cycles for stable clock
+
+    # Reset
+    dut._log.info("Reset")
+    rst_n.value = Force(0)
+    alu_input_a.value = Force(0)
+    alu_input_b.value = Force(0)
+    alu_op.value = Force(0)
+    input_signed.value = Force(0)
+    input_valid.value = Force(0)
+    output_ready.value = Force(0)
+    await ClockCycles(dut.clk, 10)
+    rst_n.value = Force(1)
+    await ClockCycles(dut.clk, 10)
+
+    if test_2s_complement:
+        input_signed.value = Force(1)
+    else:
+        input_signed.value = Force(0)
+
+    def generate_test_vectors(num_samples, operation_sequence, signal_width):
+        test_vectors = []
+        operations = ['+', '-', '*', '/']
+        max_value = 2**(input_value_range_width - 1) - 1 if test_2s_complement else 2**input_value_range_width - 1
+        min_value = -2**(input_value_range_width - 1) if test_2s_complement else 0
+
+        for i in range(num_samples):
+            a = random.randint(min_value, max_value)
+            b = random.randint(min_value, max_value)
+
+            if test_only_certain_ops != "ALL":
+                operations = [test_only_certain_ops]
+            if operation_sequence == "SEQUENTIAL_OPS":
+                op = operations[i % len(operations)]
+            elif operation_sequence == "RANDOM_OPS":
+                op = random.choice(operations)
+            else:
+                raise ValueError(f"Unknown operation_sequence: {operation_sequence}")
+
+            # If testing division, add 5% chance of b being zero
+            if op == '/' and random.random() < 0.05:
+                b = 0
+
+            test_vectors.append((a, b, op))
+        return test_vectors
+    test_vectors = generate_test_vectors(num_samples, operation_sequence, signal_width)
+
+    async def generate_input_valid(input_valid_sig, input_valid_timing):
+        await FallingEdge(clk)
+        if input_valid_timing == "ALWAYS_ON":
+            while True:
+                input_valid_sig.value = Force(1)
+                await FallingEdge(clk)
+        elif input_valid_timing == "RANDOM_VALID":
+            while True:
+                input_valid_sig.value = Force(random.choice([0, 1]))
+                await ClockCycles(clk, random.randint(1, 10))
+                await FallingEdge(clk)
+        else:
+            raise ValueError(f"Unknown input_valid_timing: {input_valid_timing}")
+    async def apply_inputs(input_ready_sig, input_valid_sig, input_a_sig, input_b_sig, input_op_sig, test_vectors):
+        for a, b, op in test_vectors:
+            # Apply inputs
+            input_a_sig.value = Force(a)
+            input_b_sig.value = Force(b)
+            alu_op_map = {'+': 0b00, '-': 0b01, '*': 0b10, '/': 0b11}
+            input_op_sig.value = Force(alu_op_map[op])
+            # Wait until input_ready and input_valid are both high
+            while True:
+                await RisingEdge(clk)
+                if input_ready_sig.value == 1 and input_valid_sig.value == 1:
+                    break
+            cocotb.log.info(f"Applied inputs: A={a}, B={b}, OP={op}")
+            await FallingEdge(clk)
+    async def generate_output_ready(output_ready_sig, output_ready_timing):
+        await FallingEdge(clk)
+        if output_ready_timing == "ALWAYS_ON":
+            while True:
+                output_ready_sig.value = Force(1)
+                await FallingEdge(clk)
+        elif output_ready_timing == "RANDOM_READY":
+            while True:
+                output_ready_sig.value = Force(random.choice([0, 1]))
+                await ClockCycles(clk, random.randint(1, 10))
+                await FallingEdge(clk)
+        else:
+            raise ValueError(f"Unknown output_ready_timing: {output_ready_timing}")
+    async def monitor_outputs(output_valid_sig, output_ready_sig, output_data_sig, output_error_sig, num_samples):
+        results = []
+        while len(results) < num_samples:
+            await RisingEdge(clk)
+            if output_valid_sig.value == 1 and output_ready_sig.value == 1:
+                result = int(output_data_sig.value) if not test_2s_complement else output_data_sig.value.signed_integer
+                error = int(output_error_sig.value)
+                results.append((result, error))
+                cocotb.log.info(f"Received output: RESULT={result}, ERROR={error}")
+        return results
+    # Start coroutines
+    input_valid_coro = cocotb.start_soon(generate_input_valid(input_valid, input_valid_timing))
+    apply_inputs_coro = cocotb.start_soon(apply_inputs(input_ready, input_valid, alu_input_a, alu_input_b, alu_op, test_vectors))
+    output_ready_coro = cocotb.start_soon(generate_output_ready(output_ready, output_ready_timing))
+    monitor_outputs_coro = cocotb.start_soon(monitor_outputs(output_valid, output_ready, output_result, output_error, num_samples))
+
+    # Wait for monitor to finish or timeout
+    await First(monitor_outputs_coro, Timer(timeout_ms, unit='ms'))
+    results = monitor_outputs_coro.result()
+    cocotb.log.info(f"Monitor results: {results}")
+
+    # Check results
+    num_errors = 0
+    for i, (a, b, op) in enumerate(test_vectors):
+        expected_result = None
+        expected_error = 0
+        try:
+            if op == '+':
+                expected_result = a + b
+            elif op == '-':
+                expected_result = a - b
+            elif op == '*':
+                expected_result = a * b
+            elif op == '/':
+                if b == 0:
+                    expected_error = 1  # Division by zero error
+                else:
+                    # abs value's int division then apply sign
+                    expected_result = int(abs(a) // abs(b))
+                    if a * b < 0:
+                        expected_result = -expected_result
+            # If expected result is out of range, clip the lower bits. Do not set error
+            if expected_result is not None:
+                if test_2s_complement:
+                    bit_mask = (1 << signal_width) - 1
+                    expected_result = expected_result & bit_mask
+                    # Convert to signed integer representation
+                    if expected_result >= (1 << (signal_width - 1)):
+                        expected_result -= (1 << signal_width)
+                else:
+                    max_value = (1 << signal_width) - 1
+                    expected_result = expected_result & max_value
+        except Exception as e:
+            cocotb.log.error(f"Error computing expected result for A={a}, B={b}, OP={op}: {e}")
+            expected_error = 1
+
+        received_result, received_error = results[i]
+        # If error is expected, just check error flag
+        if expected_error == 1 and received_error == 1:
+            cocotb.log.info(f"Expected error at index {i}: A={a}, B={b}, OP={op}, ERROR={received_error}")
+        elif expected_error == 1 and received_error == 0:
+            cocotb.log.error(f"Missing expected error at index {i}: A={a}, B={b}, OP={op}, Expected ERROR={expected_error}, Got ERROR={received_error}")
+            num_errors += 1
+        elif expected_error == 0 and received_error == 1:
+            cocotb.log.error(f"Unexpected error at index {i}: A={a}, B={b}, OP={op}, Expected ERROR={expected_error}, Got ERROR={received_error}")
+            num_errors += 1
+        elif expected_result != received_result:
+            cocotb.log.error(f"Mismatch at index {i}: A={a}, B={b}, OP={op}, Expected RESULT={expected_result}, Got RESULT={received_result}")
+            num_errors += 1
+        else:
+            cocotb.log.info(f"Match at index {i}: A={a}, B={b}, OP={op}, RESULT={received_result}, ERROR={received_error}")
+    assert num_errors == 0, f"ALU test failed with {num_errors} errors."
 
 
-@cocotb.test()  # Skipped until implemented
+@cocotb.test()
 @cocotb.parametrize(
     button_press_mode=["SINGLE_PRESS", "MULTI_PRESS", "MULTI_HOLD_LATE_RELEASE", "SHORTEST_SINGLE_PRESS"],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
