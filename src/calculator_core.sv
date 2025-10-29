@@ -40,8 +40,8 @@ module calculator_core #(
     input  logic                  i_display_done
 );
   // Temp assign all input to 0, tie all output to & _unused TODO: remove them
-  assign {o_alu_input_a, o_alu_input_b, o_alu_input_op, o_alu_input_signed, o_alu_input_valid, o_alu_result_ready, o_add_state_display, o_sub_state_display, o_mul_state_display, o_div_state_display, o_display_data, o_display_2s_comp, o_display_valid, o_button_ready} = '0;
   logic _unused = &{clk, rst_n, i_button_data, i_button_valid, i_2s_comp_mode, i_alu_result, i_alu_error, i_alu_result_valid, i_display_ready, i_display_done, i_alu_input_ready};
+  assign {o_alu_input_a, o_alu_input_b, o_alu_input_op, o_alu_input_signed, o_alu_input_valid, o_alu_result_ready, o_add_state_display, o_sub_state_display, o_mul_state_display, o_div_state_display, o_display_data, o_display_2s_comp, o_display_valid, o_button_ready} = '{default: _unused};
   
   // Enumerate FSM states
   typedef enum logic [4:0] {

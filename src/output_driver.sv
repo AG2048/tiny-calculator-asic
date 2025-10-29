@@ -40,7 +40,7 @@ module output_driver #(
   */
 
 // TODO: remove these: Temp assign all input to 0, tie all output to & _unused
-assign {o_done, o_sr_data, o_sr_clk, o_sr_latch, o_ready} = '0;
+assign {o_done, o_sr_data, o_sr_clk, o_sr_latch, o_ready} = '{default: _unused};
 logic _unused = &{clk, rst_n, i_data, i_2s_comp, i_valid};
 
 endmodule
