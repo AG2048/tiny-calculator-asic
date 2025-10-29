@@ -6,7 +6,7 @@ SIM ?= icarus
 WAVES ?= 1
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = button_reader.sv output_driver.sv calculator_core.sv alu.sv project.v
+PROJECT_SOURCES = button_reader.sv output_driver.sv calculator_core.sv alu.sv full_adder.sv project.v
 
 NUM_SAMPLES ?= 100
 TIMEOUT_MS ?= 1000
