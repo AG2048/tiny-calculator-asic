@@ -71,7 +71,7 @@ module alu #(
 
   // Registers
   logic [DATA_WIDTH-1:0] result_reg;
-  logic [2*DATA_WIDTH-2:0] a_reg;
+  logic [2*DATA_WIDTH-1:0] a_reg;
   logic [DATA_WIDTH-1:0] b_reg;
   assign o_alu_result = result_reg;
 
@@ -92,18 +92,20 @@ module alu #(
   // ALU full adder instance
   logic [DATA_WIDTH-1:0] adder_output, adder_a_input, adder_b_input;
   logic adder_subtract;
+  logic adder_carry_out;
   full_adder #(
     .DATA_WIDTH(DATA_WIDTH)
   ) alu_adder (
     .a       (adder_a_input),
     .b       (adder_b_input),
     .carry_in(adder_subtract), // For subtraction, add 1 at LSB (2's complement)
-    .sum     (adder_output)
+    .sum     (adder_output),
+    .carry_out(adder_carry_out)
   );
 
   // Logic signals
   logic divides;
-  assign divides = ~adder_output[DATA_WIDTH-1]; // If A - B >= 0, then A divides B
+  assign divides = (adder_carry_out) ^ a_reg[2*DATA_WIDTH-1]; // If A - B >= 0, then A divides B
 
   // State transition
   always_ff @(posedge clk or negedge rst_n) begin
@@ -448,7 +450,7 @@ module alu #(
       if (o_alu_input_ready && i_alu_input_valid) begin
         // Load input A
         // A register is wider, fill with zeros at MSBs
-        a_reg <= { {(DATA_WIDTH-1){1'b0}}, i_alu_input_a };
+        a_reg <= { {(DATA_WIDTH){1'b0}}, i_alu_input_a };
       end else if (flipping_a) begin
         // Flip sign of A only when needed
         // flipping_a should only be 1 if i_alu_input_signed is 1
@@ -462,10 +464,10 @@ module alu #(
         // DIV operation: 
         if (divides) begin
           // Subtract B from A (A = A - B) // TODO and shift whole thing left
-          a_reg <= { adder_output[DATA_WIDTH-2:0], a_reg[DATA_WIDTH-2:0], 1'b0 };
+          a_reg <= { adder_output[DATA_WIDTH-1:0], a_reg[DATA_WIDTH-2:0], 1'b0 };
         end else begin
           // Shift left A (A = A << 1)
-          a_reg <= { a_reg[2*DATA_WIDTH-3:0], 1'b0 };
+          a_reg <= { a_reg[2*DATA_WIDTH-2:0], 1'b0 };
         end
       end
     end
@@ -519,7 +521,7 @@ module alu #(
   end
 
   // Adder inputs selection
-  always_comb begin
+  always_comb begin : adder_input_selection
     // Default assignments
     adder_a_input = '0;
     adder_b_input = '0;
@@ -557,7 +559,7 @@ module alu #(
       adder_subtract = 1'b1; // Subtract B from A
     end else if (in_post_div) begin
       // Post-DIV operation: flip sign of result if needed
-      adder_a_input = result_reg;
+      adder_a_input = ~result_reg;
       adder_b_input = '0;
       adder_subtract = 1'b1; // Add 1 for 2's complement
     end

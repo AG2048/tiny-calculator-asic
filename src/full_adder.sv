@@ -4,9 +4,12 @@ module full_adder #(
   input  logic [DATA_WIDTH-1:0] a,
   input  logic [DATA_WIDTH-1:0] b,
   input  logic                  carry_in,
-  output logic [DATA_WIDTH-1:0] sum
+  output logic [DATA_WIDTH-1:0] sum,
+  output logic                  carry_out
 );
   wire [DATA_WIDTH:0] carry;
+
+  assign carry_out = carry[DATA_WIDTH];
 
   assign carry[0] = carry_in;
   for (genvar i = 0; i < DATA_WIDTH; i++) begin
