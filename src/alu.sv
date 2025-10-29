@@ -31,14 +31,14 @@ module alu #(
         i_alu_input_a: first operand
         i_alu_input_b: second operand
         i_alu_input_op: operation
-        i_alu_input_signed: signed/unsigned for DIV only (MUL outputs same width as inputs, so signed/unsigned doesn't matter) TODO: may consider adding MUL bits later
+        i_alu_input_signed: signed/unsigned for DIV only (MUL outputs same width as inputs, so signed/unsigned doesn't matter)
           Sign of inputs are also recorded at input time
     Div by zero error is detected at input time, will immediately output a random number with o_alu_error high at output time.
 
     ADD/SUB: 1 cycle operation using a full adder
-    MUL:     DATA_WIDTH cycle operation by shift-and-add algorithm (TODO: currently 1 cycle for placeholder)
-    DIV:     DATA_WIDTH cycle operation by TODO algorithm (TODO: currently 1 cycle for placeholder)
-             Division result may be sign flipped at the end based on input signs.
+    MUL:     DATA_WIDTH cycle operation by shift-and-add algorithm
+    DIV:     DATA_WIDTH cycle operation by binary long division
+             Only handle unsigned division. For signed values, the operands are sign-flipped at input time if needed, and the result is sign-flipped at output time if needed.
 
     All operation can use the same full adder. 
 
@@ -48,7 +48,6 @@ module alu #(
     input ready is only high when ALU is ready to accept new inputs (i.e., not busy processing previous inputs).
     output valid is only high when result is ready to be read. 
   */
-  // TODO: this is mostly a placeholder implementation, replace with actual multi-cycle implementations for MUL and DIV later
   localparam COUNTER_WIDTH = $clog2(DATA_WIDTH); // Width to count from 0 to DATA_WIDTH-1
 
   // FSM states
@@ -108,7 +107,7 @@ module alu #(
   assign divides = (adder_carry_out) ^ a_reg[2*DATA_WIDTH-1]; // If A - B >= 0, then A divides B
 
   // State transition
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin : state_transition
     if (!rst_n) begin
       current_state <= WAIT_INPUT;
       div_result_neg_reg <= 1'b0;
@@ -120,6 +119,7 @@ module alu #(
               // Load inputs
               // Determine next state based on operation
               case (i_alu_input_op)
+                // Proceed to operation states
                 2'b00: current_state <= ADD_OP;
                 2'b01: current_state <= SUB_OP;
                 2'b10: current_state <= MUL_INIT;
@@ -128,13 +128,13 @@ module alu #(
                     // Div
                     if (i_alu_input_b == 0) current_state <= OUTPUT_ERROR; // Div by zero error
                     else begin
-                      // Determine if need to flip signs
+                      // Determine if need to flip signs, never flip signs if inputs are unsigned
                       div_result_neg_reg <= i_alu_input_signed && 
                                             (i_alu_input_a[DATA_WIDTH-1] ^ i_alu_input_b[DATA_WIDTH-1]);
                       if (i_alu_input_signed) begin
-                        current_state <= DIV_FLIP_A;
+                        current_state <= DIV_FLIP_A; // Flip input signs if we read signed values
                       end else begin
-                        current_state <= DIV_INIT;
+                        current_state <= DIV_INIT; // No sign flip needed
                       end
                     end
                   end
@@ -144,54 +144,54 @@ module alu #(
           end
         ADD_OP:
           begin
-            current_state <= OUTPUT_RESULT;
+            current_state <= OUTPUT_RESULT; // 1 cycle op
           end
         SUB_OP:
           begin
-            current_state <= OUTPUT_RESULT;
+            current_state <= OUTPUT_RESULT; // 1 cycle op
           end
         MUL_INIT:
           begin
-            current_state <= MUL_OP;
+            current_state <= MUL_OP; // Start MUL operation, set up counter
           end
         MUL_OP:
           begin
             if (counter == 0) begin
-              current_state <= OUTPUT_RESULT;
+              current_state <= OUTPUT_RESULT; // MUL done (this ensures operation runs DATA_WIDTH cycles)
             end
           end
         DIV_FLIP_A:
           begin
-            current_state <= DIV_FLIP_B;
+            current_state <= DIV_FLIP_B; // Proceed to flip B
           end
         DIV_FLIP_B:
           begin
-            current_state <= DIV_INIT;
+            current_state <= DIV_INIT; // Proceed to init
           end
         DIV_INIT:
           begin
-            current_state <= DIV_OP;
+            current_state <= DIV_OP; // Start DIV operation, set up counter
           end
         DIV_OP:
           begin
             if (counter == 0) begin
-              current_state <= DIV_POST;
+              current_state <= DIV_POST; // DIV done (this ensures operation runs DATA_WIDTH cycles), and sign-flip if needed
             end
           end
         DIV_POST:
           begin
-            current_state <= OUTPUT_RESULT;
+            current_state <= OUTPUT_RESULT; // Proceed to output result
           end
         OUTPUT_RESULT:
           begin
             if (i_alu_result_ready && o_alu_result_valid) begin
-              current_state <= WAIT_INPUT;
+              current_state <= WAIT_INPUT; // Go back to wait for new input
             end
           end
         OUTPUT_ERROR:
           begin
             if (i_alu_result_ready && o_alu_result_valid) begin
-              current_state <= WAIT_INPUT;
+              current_state <= WAIT_INPUT; // Go back to wait for new input
             end
           end
         default:
@@ -203,11 +203,11 @@ module alu #(
   end
 
   // Control signals generation
-  always_comb begin
+  always_comb begin : control_signal_assignment
     case (current_state)
       WAIT_INPUT:
         begin
-          input_ready   = 1;
+          input_ready   = 1; // Ready to accept new inputs
           result_valid  = 0;
           error_flag    = 0;
 
@@ -216,7 +216,7 @@ module alu #(
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter until needed
           
           flipping_a    = 0;
           flipping_b    = 0;
@@ -229,12 +229,12 @@ module alu #(
           result_valid  = 0;
           error_flag    = 0;
 
-          in_add        = 1;
+          in_add        = 1; // Perform ADD
           in_sub        = 0;
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter until needed
           
           flipping_a    = 0;
           flipping_b    = 0;
@@ -248,11 +248,11 @@ module alu #(
           error_flag    = 0;
 
           in_add        = 0;
-          in_sub        = 1;
+          in_sub        = 1; // Perform SUB
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter until needed
           
           flipping_a    = 0;
           flipping_b    = 0;
@@ -270,7 +270,7 @@ module alu #(
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter before starting MUL
           
           flipping_a    = 0;
           flipping_b    = 0;
@@ -285,7 +285,7 @@ module alu #(
 
           in_add        = 0;
           in_sub        = 0;
-          in_mul        = 1;
+          in_mul        = 1; // Perform MUL
           in_div        = 0;
           
           reset_counter = 0;
@@ -306,9 +306,9 @@ module alu #(
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter until needed
           
-          flipping_a    = 1;
+          flipping_a    = 1; // Flip A while input is signed, still need to check if A is negative or not
           flipping_b    = 0;
 
           in_post_div   = 0;
@@ -324,10 +324,10 @@ module alu #(
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter until needed
           
           flipping_a    = 0;
-          flipping_b    = 1;
+          flipping_b    = 1; // Flip B while input is signed, still need to check if B is negative or not
 
           in_post_div   = 0;
         end
@@ -342,7 +342,7 @@ module alu #(
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter before starting DIV
           
           flipping_a    = 0;
           flipping_b    = 0;
@@ -358,7 +358,7 @@ module alu #(
           in_add        = 0;
           in_sub        = 0;
           in_mul        = 0;
-          in_div        = 1;
+          in_div        = 1; // Perform DIV
           
           reset_counter = 0;
           
@@ -383,12 +383,12 @@ module alu #(
           flipping_a    = 0;
           flipping_b    = 0;
 
-          in_post_div   = 1;
+          in_post_div   = 1; // Flip result if needed
         end
       OUTPUT_RESULT:
         begin
           input_ready   = 0;
-          result_valid  = 1;
+          result_valid  = 1; // Result is valid
           error_flag    = 0;
 
           in_add        = 0;
@@ -396,7 +396,7 @@ module alu #(
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter until needed
           
           flipping_a    = 0;
           flipping_b    = 0;
@@ -406,15 +406,15 @@ module alu #(
       OUTPUT_ERROR:
         begin
           input_ready   = 0;
-          result_valid  = 1;
-          error_flag    = 1;
+          result_valid  = 1; // Result is valid
+          error_flag    = 1; // Error flag high
 
           in_add        = 0;
           in_sub        = 0;
           in_mul        = 0;
           in_div        = 0;
           
-          reset_counter = 1;
+          reset_counter = 1; // Reset counter until needed
           
           flipping_a    = 0;
           flipping_b    = 0;
@@ -463,7 +463,7 @@ module alu #(
       end else if (in_div) begin
         // DIV operation: 
         if (divides) begin
-          // Subtract B from A (A = A - B) // TODO and shift whole thing left
+          // Subtract B from A (A = A - B)
           a_reg <= { adder_output[DATA_WIDTH-1:0], a_reg[DATA_WIDTH-2:0], 1'b0 };
         end else begin
           // Shift left A (A = A << 1)
@@ -566,7 +566,7 @@ module alu #(
   end
 
   // Counter for multi-cycle operations
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin : counter_block
     if (!rst_n) begin
       counter <= '0;
     end else begin
@@ -577,5 +577,4 @@ module alu #(
       end
     end
   end
-
 endmodule
