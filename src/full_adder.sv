@@ -7,7 +7,7 @@ module full_adder #(
   output logic [DATA_WIDTH-1:0] sum,
   output logic                  carry_out
 );
-  wire [DATA_WIDTH:0] carry;
+  wire [DATA_WIDTH:0] carry /*verilator split_var*/;
 
   assign carry_out = carry[DATA_WIDTH];
 
