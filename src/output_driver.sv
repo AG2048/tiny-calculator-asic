@@ -16,7 +16,6 @@ module output_driver #(
     input  logic                  i_2s_comp,  // Indicates if i_data is in 2's complement format
     input  logic                  i_valid,
     output logic                  o_ready,
-    output logic                  o_done,     // Low when data is being shifted out
 
     output logic                  o_sr_data,
     output logic                  o_sr_clk,
@@ -41,7 +40,6 @@ module output_driver #(
 
 // TODO: remove these: Temp assign all input to 0, tie all output to & _unused
 logic _unused = &{clk, rst_n, i_data, i_2s_comp, i_valid};
-assign o_done     = _unused;
 assign o_sr_data  = _unused;
 assign o_sr_clk   = _unused;
 assign o_sr_latch = _unused;

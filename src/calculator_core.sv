@@ -36,11 +36,10 @@ module calculator_core #(
     output logic [DATA_WIDTH-1:0] o_display_data,
     output logic                  o_display_2s_comp,
     output logic                  o_display_valid,
-    input  logic                  i_display_ready,
-    input  logic                  i_display_done
+    input  logic                  i_display_ready
 );
   // Temp assign all input to 0, tie all output to & _unused TODO: remove them
-  logic _unused = &{clk, rst_n, i_button_data, i_button_valid, i_2s_comp_mode, i_alu_result, i_alu_error, i_alu_result_valid, i_display_ready, i_display_done, i_alu_input_ready};
+  logic _unused = &{clk, rst_n, i_button_data, i_button_valid, i_2s_comp_mode, i_alu_result, i_alu_error, i_alu_result_valid, i_display_ready, i_alu_input_ready};
   assign o_alu_input_a        = {DATA_WIDTH{_unused}};
   assign o_alu_input_b        = {DATA_WIDTH{_unused}};
   assign o_alu_input_op       = {2{_unused}};
@@ -62,20 +61,16 @@ module calculator_core #(
     WAIT_FIRST_INPUT,
     FIRST_INPUT_NUMBER,
     DISPLAY_AFTER_FIRST_INPUT,
-    WAIT_DISPLAY_DONE_AFTER_FIRST_INPUT,
     FIRST_INPUT_OP,
     WAIT_SECOND_INPUT_BEFORE_VALUE,
     COPY_A_TO_B,
     SECOND_INPUT_NUMBER,
     DISPLAY_AFTER_SECOND_INPUT,
-    WAIT_DISPLAY_DONE_AFTER_SECOND_INPUT,
     WAIT_SECOND_INPUT_AFTER_VALUE,
     SECOND_INPUT_OP_CALCULATE,
     DISPLAY_AFTER_SECOND_OP,
-    WAIT_DISPLAY_DONE_AFTER_SECOND_OP,
     EQUAL_AFTER_SECOND_VALUE,
     DISPLAY_AFTER_EQUAL,
-    WAIT_DISPLAY_DONE_AFTER_EQUAL,
     WAIT_INPUT_AFTER_EQUAL,
     CLEAR_AFTER_EQUAL,
     ERROR
@@ -121,14 +116,6 @@ module calculator_core #(
           begin
             // Wait for value to be sent to display
             if (o_display_valid && i_display_ready) begin
-              current_state <= WAIT_DISPLAY_DONE_AFTER_FIRST_INPUT;
-            end
-          end
-        WAIT_DISPLAY_DONE_AFTER_FIRST_INPUT:
-          begin
-            // Wait for display to be done
-            if (i_display_done) begin
-              current_state <= WAIT_FIRST_INPUT;
             end
           end
       endcase

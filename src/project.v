@@ -58,7 +58,6 @@ module tt_um_ag2048_calculator (
   wire                  output_valid;
   wire                  output_ready;
   wire                  output_2s_comp; // TODO: Might be just tied to i_2s_comp_mode_pin
-  wire                  output_done;
 
   wire                  o_sr_data;
   wire                  o_sr_clk;
@@ -143,8 +142,7 @@ module tt_um_ag2048_calculator (
       .o_display_data      (output_value),
       .o_display_2s_comp   (output_2s_comp),
       .o_display_valid     (output_valid),
-      .i_display_ready     (output_ready),
-      .i_display_done      (output_done)
+      .i_display_ready     (output_ready)
   );
 
   // Instantiate the ALU module
@@ -179,7 +177,6 @@ module tt_um_ag2048_calculator (
       .i_2s_comp  (output_2s_comp),
       .i_valid    (output_valid),
       .o_ready    (output_ready),
-      .o_done     (output_done),
 
       .o_sr_data  (o_sr_data),
       .o_sr_clk   (o_sr_clk),
