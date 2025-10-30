@@ -39,11 +39,11 @@ module output_driver #(
       (TODO: Must flush the shift register with EMPTY before sending new data / or we can send a reset signal to the shift register first)
   */
 
-// TODO: remove these: Temp assign all input to 0, tie all output to & _unused
-logic _unused = &{clk, rst_n, i_data, i_data_is_neg, i_valid};
-assign o_sr_data  = _unused;
-assign o_sr_clk   = _unused;
-assign o_sr_latch = _unused;
-assign o_ready    = _unused;
+// TODO: remove these: Temp assign all input to 0, tie all output to ^ _unused
+logic temp = ^{clk, rst_n, i_data, i_error, i_data_is_neg, i_valid};
+assign o_sr_data  = temp;
+assign o_sr_clk   = temp;
+assign o_sr_latch = temp;
+assign o_ready    = temp;
 
 endmodule
