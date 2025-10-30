@@ -57,7 +57,7 @@ module tt_um_ag2048_calculator (
   wire [DATA_WIDTH-1:0] output_value;
   wire                  output_valid;
   wire                  output_ready;
-  wire                  output_2s_comp; // TODO: Might be just tied to i_2s_comp_mode_pin
+  wire                  output_value_is_neg;
 
   wire                  o_sr_data;
   wire                  o_sr_clk;
@@ -114,35 +114,35 @@ module tt_um_ag2048_calculator (
   calculator_core #(
       .DATA_WIDTH(DATA_WIDTH)
   ) cc_inst (
-      .clk                 (clk),
-      .rst_n               (rst_n),
+      .clk                    (clk),
+      .rst_n                  (rst_n),
 
-      .i_button_data       (input_value),
-      .i_button_valid      (input_valid),
-      .o_button_ready      (input_ready),
-      .i_2s_comp_mode      (i_2s_comp_mode_pin),
+      .i_button_data          (input_value),
+      .i_button_valid         (input_valid),
+      .o_button_ready         (input_ready),
+      .i_2s_comp_mode         (i_2s_comp_mode_pin),
 
-      .o_alu_input_a       (alu_input_a),
-      .o_alu_input_b       (alu_input_b),
-      .o_alu_input_op      (alu_input_op),
-      .o_alu_input_signed  (alu_input_signed),
-      .o_alu_input_valid   (alu_input_valid),
-      .i_alu_input_ready   (alu_input_ready),
+      .o_alu_input_a          (alu_input_a),
+      .o_alu_input_b          (alu_input_b),
+      .o_alu_input_op         (alu_input_op),
+      .o_alu_input_signed     (alu_input_signed),
+      .o_alu_input_valid      (alu_input_valid),
+      .i_alu_input_ready      (alu_input_ready),
 
-      .i_alu_result        (alu_output_result),
-      .i_alu_error         (alu_output_error),
-      .i_alu_result_valid  (alu_output_valid),
-      .o_alu_result_ready  (alu_output_ready),
+      .i_alu_result           (alu_output_result),
+      .i_alu_error            (alu_output_error),
+      .i_alu_result_valid     (alu_output_valid),
+      .o_alu_result_ready     (alu_output_ready),
 
-      .o_add_state_display (o_add_state_display),
-      .o_sub_state_display (o_sub_state_display),
-      .o_mul_state_display (o_mul_state_display),
-      .o_div_state_display (o_div_state_display),
+      .o_add_state_display    (o_add_state_display),
+      .o_sub_state_display    (o_sub_state_display),
+      .o_mul_state_display    (o_mul_state_display),
+      .o_div_state_display    (o_div_state_display),
 
-      .o_display_data      (output_value),
-      .o_display_2s_comp   (output_2s_comp),
-      .o_display_valid     (output_valid),
-      .i_display_ready     (output_ready)
+      .o_display_data         (output_value),
+      .o_display_value_is_neg (output_value_is_neg),
+      .o_display_valid        (output_valid),
+      .i_display_ready        (output_ready)
   );
 
   // Instantiate the ALU module
@@ -170,17 +170,17 @@ module tt_um_ag2048_calculator (
       .DATA_WIDTH(DATA_WIDTH),
       .NUM_7_SEG_DISPLAYS(NUM_7_SEG_DISPLAYS)
   ) od_inst (
-      .clk        (clk),
-      .rst_n      (rst_n),
+      .clk           (clk),
+      .rst_n         (rst_n),
 
-      .i_data     (output_value),
-      .i_2s_comp  (output_2s_comp),
-      .i_valid    (output_valid),
-      .o_ready    (output_ready),
+      .i_data        (output_value),
+      .i_data_is_neg (output_value_is_neg),
+      .i_valid       (output_valid),
+      .o_ready       (output_ready),
 
-      .o_sr_data  (o_sr_data),
-      .o_sr_clk   (o_sr_clk),
-      .o_sr_latch (o_sr_latch)
+      .o_sr_data     (o_sr_data),
+      .o_sr_clk      (o_sr_clk),
+      .o_sr_latch    (o_sr_latch)
   );
 
 endmodule

@@ -12,8 +12,8 @@ module output_driver #(
     input  logic                  clk,
     input  logic                  rst_n,
 
-    input  logic [DATA_WIDTH-1:0] i_data,
-    input  logic                  i_2s_comp,  // Indicates if i_data is in 2's complement format
+    input  logic [DATA_WIDTH-1:0] i_data,         // Number to be displayed, always ABS value
+    input  logic                  i_data_is_neg,  // Indicates if i_data is negative
     input  logic                  i_valid,
     output logic                  o_ready,
 
@@ -39,7 +39,7 @@ module output_driver #(
   */
 
 // TODO: remove these: Temp assign all input to 0, tie all output to & _unused
-logic _unused = &{clk, rst_n, i_data, i_2s_comp, i_valid};
+logic _unused = &{clk, rst_n, i_data, i_data_is_neg, i_valid};
 assign o_sr_data  = _unused;
 assign o_sr_clk   = _unused;
 assign o_sr_latch = _unused;

@@ -34,7 +34,7 @@ module calculator_core #(
     output logic                  o_div_state_display,
 
     output logic [DATA_WIDTH-1:0] o_display_data,
-    output logic                  o_display_2s_comp,
+    output logic                  o_display_value_is_neg,
     output logic                  o_display_valid,
     input  logic                  i_display_ready
 );
@@ -115,9 +115,9 @@ module calculator_core #(
   logic [DATA_WIDTH-1:0] output_value; // Value to output to display driver
   logic display_valid;   // Handshake signal for display output
   assign output_value = output_a_not_b ? reg_a : reg_b;
-  assign o_display_data    = output_value;
+  assign o_display_data    = o_display_value_is_neg ? fa_sum : output_value; // If value is negative, flip sign using full adder (2's comp)
   assign o_display_valid   = display_valid;
-  assign o_display_2s_comp = i_2s_comp_mode;
+  assign o_display_value_is_neg = i_2s_comp_mode ? (output_value[DATA_WIDTH-1] == 1'b1) : '0; // In 2's comp mode, display value is negative if MSB is 1, else always 0
 
   // Full adder instance (for inverting and handling shift + load operations)
   logic [DATA_WIDTH-1:0] fa_a, fa_b, fa_sum;
@@ -876,6 +876,13 @@ module calculator_core #(
       fa_a = ~reg_b;
       fa_b = '0;
       fa_carry_in = 1'b1;
+    end else if (display_valid) begin
+      // Outputting data, convert to abs value only if o_display_value_is_neg is set
+      if (o_display_value_is_neg) begin
+        fa_a = ~output_value;
+        fa_b = '0;
+        fa_carry_in = 1'b1;
+      end
     end
   end
 endmodule
