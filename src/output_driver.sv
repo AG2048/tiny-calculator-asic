@@ -13,6 +13,7 @@ module output_driver #(
     input  logic                  rst_n,
 
     input  logic [DATA_WIDTH-1:0] i_data,         // Number to be displayed, always ABS value
+    input  logic                  i_error,
     input  logic                  i_data_is_neg,  // Indicates if i_data is negative
     input  logic                  i_valid,
     output logic                  o_ready,

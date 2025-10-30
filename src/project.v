@@ -55,6 +55,7 @@ module tt_um_ag2048_calculator (
   wire                  o_div_state_display;
 
   wire [DATA_WIDTH-1:0] output_value;
+  wire                  output_error;
   wire                  output_valid;
   wire                  output_ready;
   wire                  output_value_is_neg;
@@ -140,6 +141,7 @@ module tt_um_ag2048_calculator (
       .o_div_state_display    (o_div_state_display),
 
       .o_display_data         (output_value),
+      .o_display_error        (output_error),
       .o_display_value_is_neg (output_value_is_neg),
       .o_display_valid        (output_valid),
       .i_display_ready        (output_ready)
@@ -174,6 +176,7 @@ module tt_um_ag2048_calculator (
       .rst_n         (rst_n),
 
       .i_data        (output_value),
+      .i_error       (output_error),
       .i_data_is_neg (output_value_is_neg),
       .i_valid       (output_valid),
       .o_ready       (output_ready),

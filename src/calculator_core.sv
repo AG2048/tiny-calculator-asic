@@ -34,6 +34,7 @@ module calculator_core #(
     output logic                  o_div_state_display,
 
     output logic [DATA_WIDTH-1:0] o_display_data,
+    output logic                  o_display_error,
     output logic                  o_display_value_is_neg,
     output logic                  o_display_valid,
     input  logic                  i_display_ready
@@ -85,6 +86,7 @@ module calculator_core #(
   logic load_op;         // Load operation from temp register to current_op
   logic reg_a_load;      // Load value from temp to reg A (with shift left by 4)
   logic reg_b_load;      // Load value from temp to reg B (with shift left by 4)
+  logic reg_b_load_a;    // Load value from reg A to reg B
   logic reg_a_invert;    // Invert reg A value (2's comp)
   logic reg_b_invert;    // Invert reg B value (2's comp)
   logic clear_regs;      // Clear reg A and reg B to 0, along with neg flags (preserve temp_input)
@@ -115,9 +117,11 @@ module calculator_core #(
   assign o_mul_state_display = (current_op == 2'b10) && show_current_op;
   assign o_div_state_display = (current_op == 2'b11) && show_current_op;
   logic [DATA_WIDTH-1:0] output_value; // Value to output to display driver
+  logic display_error;
   logic display_valid;   // Handshake signal for display output
   assign output_value = output_a_not_b ? reg_a : reg_b;
   assign o_display_data    = o_display_value_is_neg ? fa_sum : output_value; // If value is negative, flip sign using full adder (2's comp)
+  assign o_display_error   = display_error;
   assign o_display_valid   = display_valid;
   assign o_display_value_is_neg = i_2s_comp_mode ? (output_value[DATA_WIDTH-1] == 1'b1) : '0; // In 2's comp mode, display value is negative if MSB is 1, else always 0
 
@@ -374,7 +378,26 @@ module calculator_core #(
       endcase
     end
   end
+/*
+logic clear_regs;      // Clear reg A and reg B to 0, along with neg flags (preserve temp_input)
+logic clear_reg_b;     // Clear reg B only (when in wait_second_input_before_values)
+logic reset_neg_flags; // Reset both A and B neg flags to 0
 
+logic load_op;         // Load operation from temp register to current_op
+logic reg_a_load;      // Load value from temp to reg A (with shift left by 4)
+logic reg_b_load;      // Load value from temp to reg B (with shift left by 4)
+
+logic reg_a_invert;    // Invert reg A value (2's comp)
+logic reg_b_invert;    // Invert reg B value (2's comp)
+
+logic show_current_op; // Show current op state via o_*_state_display outputs
+logic output_a_not_b;  // Output reg A if 1, reg B if 0
+
+button_input_ready
+logic alu_input_valid; // Handshake signal for ALU input
+logic alu_out_ready;   // Handshake signals for ALU output
+display_valid
+*/
   // Control signal combinational logic
   always_comb begin : fsm_control_signals_comb
     case (current_state)
@@ -388,6 +411,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -399,6 +423,7 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       DISPLAY_AFTER_AC:
         begin
@@ -410,17 +435,19 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
           
           show_current_op    = 0;
-          output_a_not_b     = 0;
+          output_a_not_b     = 1;
 
           button_input_ready = 0;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
-          display_valid      = 0;
+          display_valid      = 1;
+          display_error      = 0;
         end
       WAIT_FIRST_INPUT:
         begin
@@ -432,6 +459,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -439,10 +467,11 @@ module calculator_core #(
           show_current_op    = 0;
           output_a_not_b     = 0;
 
-          button_input_ready = 0;
+          button_input_ready = 1;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       FIRST_INPUT_NUMBER:
         begin
@@ -452,8 +481,9 @@ module calculator_core #(
           clear_reg_b        = 0;
 
           load_op            = 0;
-          reg_a_load         = 0;
+          reg_a_load         = 1;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -465,6 +495,7 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       DISPLAY_AFTER_FIRST_INPUT:
         begin
@@ -476,17 +507,19 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
           
           show_current_op    = 0;
-          output_a_not_b     = 0;
+          output_a_not_b     = 1;
 
           button_input_ready = 0;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
-          display_valid      = 0;
+          display_valid      = 1;
+          display_error      = 0;
         end
       FIRST_INPUT_OP:
         begin
@@ -495,9 +528,10 @@ module calculator_core #(
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
 
-          load_op            = 0;
+          load_op            = 1;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -509,6 +543,7 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       FIRST_INPUT_NEG:
         begin
@@ -520,8 +555,9 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
-          reg_a_invert       = 0;
+          reg_a_invert       = 1;
           reg_b_invert       = 0;
           
           show_current_op    = 0;
@@ -531,17 +567,19 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       WAIT_SECOND_INPUT_BEFORE_VALUE:
         begin
           // Wait for second input, next state depends on MSB of input (number or op) + specific op (ac, eq, neg)
           clear_regs         = 0;
           reset_neg_flags    = 0;
-          clear_reg_b        = 0;
+          clear_reg_b        = 1;
 
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -549,10 +587,11 @@ module calculator_core #(
           show_current_op    = 0;
           output_a_not_b     = 0;
 
-          button_input_ready = 0;
+          button_input_ready = 1;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       SECOND_INPUT_NEG_BEFORE_VALUE:
         begin
@@ -563,7 +602,8 @@ module calculator_core #(
 
           load_op            = 0;
           reg_a_load         = 0;
-          reg_b_load         = 0;
+          reg_b_load         = 1;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -575,6 +615,7 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       COPY_A_TO_B:
         begin
@@ -586,6 +627,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 1;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -597,6 +639,7 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       SECOND_INPUT_NUMBER:
         begin
@@ -607,7 +650,8 @@ module calculator_core #(
 
           load_op            = 0;
           reg_a_load         = 0;
-          reg_b_load         = 0;
+          reg_b_load         = 1;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -619,6 +663,7 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       DISPLAY_AFTER_SECOND_INPUT:
         begin
@@ -630,6 +675,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -640,7 +686,8 @@ module calculator_core #(
           button_input_ready = 0;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
-          display_valid      = 0;
+          display_valid      = 1;
+          display_error      = 0;
         end
       WAIT_SECOND_INPUT_AFTER_VALUE:
         begin
@@ -652,6 +699,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -659,10 +707,11 @@ module calculator_core #(
           show_current_op    = 0;
           output_a_not_b     = 0;
 
-          button_input_ready = 0;
+          button_input_ready = 1;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       SECOND_INPUT_NEG_AFTER_VALUE:
         begin
@@ -674,9 +723,10 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
-          reg_b_invert       = 0;
+          reg_b_invert       = 1;
           
           show_current_op    = 0;
           output_a_not_b     = 0;
@@ -685,17 +735,19 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       SECOND_INPUT_OP_CALCULATE:
         begin
           // PRESSED Op: A = A op B, and load in new operation while ALU gets old operation, SECOND_INPUT_OP_CALCULATE_WAIT_RESULT next
           clear_regs         = 0;
-          reset_neg_flags    = 0;
+          reset_neg_flags    = 1;
           clear_reg_b        = 0;
 
-          load_op            = 0;
+          load_op            = 1;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -704,9 +756,10 @@ module calculator_core #(
           output_a_not_b     = 0;
 
           button_input_ready = 0;
-          alu_input_valid    = 0;
+          alu_input_valid    = 1;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       SECOND_INPUT_OP_CALCULATE_WAIT_RESULT:
         begin
@@ -718,6 +771,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -727,8 +781,9 @@ module calculator_core #(
 
           button_input_ready = 0;
           alu_input_valid    = 0;
-          alu_out_ready      = 0;
+          alu_out_ready      = 1;
           display_valid      = 0;
+          display_error      = 0;
         end
       DISPLAY_AFTER_SECOND_OP:
         begin
@@ -740,28 +795,31 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
           
           show_current_op    = 0;
-          output_a_not_b     = 0;
+          output_a_not_b     = 1;
 
           button_input_ready = 0;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
-          display_valid      = 0;
+          display_valid      = 1;
+          display_error      = 0;
         end
       EQUAL_AFTER_SECOND_VALUE:
         begin
           // PRESSED Eq: A = A op B, EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT next
           clear_regs         = 0;
-          reset_neg_flags    = 0;
+          reset_neg_flags    = 1;
           clear_reg_b        = 0;
 
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -770,9 +828,10 @@ module calculator_core #(
           output_a_not_b     = 0;
 
           button_input_ready = 0;
-          alu_input_valid    = 0;
+          alu_input_valid    = 1;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT:
         begin
@@ -784,6 +843,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -793,8 +853,9 @@ module calculator_core #(
 
           button_input_ready = 0;
           alu_input_valid    = 0;
-          alu_out_ready      = 0;
+          alu_out_ready      = 1;
           display_valid      = 0;
+          display_error      = 0;
         end
       DISPLAY_AFTER_EQUAL:
         begin
@@ -806,17 +867,19 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
           
           show_current_op    = 0;
-          output_a_not_b     = 0;
+          output_a_not_b     = 1;
 
           button_input_ready = 0;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
-          display_valid      = 0;
+          display_valid      = 1;
+          display_error      = 0;
         end
       WAIT_INPUT_AFTER_EQUAL:
         begin
@@ -828,6 +891,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -835,10 +899,11 @@ module calculator_core #(
           show_current_op    = 0;
           output_a_not_b     = 0;
 
-          button_input_ready = 0;
+          button_input_ready = 1;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       INPUT_NEG_AFTER_EQUAL:
         begin
@@ -850,8 +915,9 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
-          reg_a_invert       = 0;
+          reg_a_invert       = 1;
           reg_b_invert       = 0;
           
           show_current_op    = 0;
@@ -861,17 +927,19 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       CLEAR_AFTER_EQUAL:
         begin
           // PRESSED Number: after EQUAL, clear and load new number into temp reg (clear all neg flags), FIRST_INPUT_NUMBER next
-          clear_regs         = 0;
-          reset_neg_flags    = 0;
+          clear_regs         = 1;
+          reset_neg_flags    = 1;
           clear_reg_b        = 0;
 
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -883,6 +951,7 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       DISPLAY_ERROR:
         begin
@@ -894,6 +963,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -904,7 +974,8 @@ module calculator_core #(
           button_input_ready = 0;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
-          display_valid      = 0;
+          display_valid      = 1;
+          display_error      = 1;
         end
       ERROR_WAIT:
         begin
@@ -916,6 +987,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -923,10 +995,11 @@ module calculator_core #(
           show_current_op    = 0;
           output_a_not_b     = 0;
 
-          button_input_ready = 0;
+          button_input_ready = 1;
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
+          display_error      = 0;
         end
       default:
         begin
@@ -938,6 +1011,7 @@ module calculator_core #(
           load_op            = 0;
           reg_a_load         = 0;
           reg_b_load         = 0;
+          reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
           reg_b_invert       = 0;
@@ -949,7 +1023,7 @@ module calculator_core #(
           alu_input_valid    = 0;
           alu_out_ready      = 0;
           display_valid      = 0;
-
+          display_error      = 0;
         end
     endcase
   end
@@ -975,6 +1049,8 @@ module calculator_core #(
     end else begin
       if (clear_regs || clear_reg_b) begin
         reg_b <= '0;
+      end else if (reg_b_load_a) begin
+        reg_b <= reg_a;
       end else if (reg_b_load || reg_b_invert) begin
         reg_b <= fa_sum; // Load in shifted and added result / inverted result
       end
