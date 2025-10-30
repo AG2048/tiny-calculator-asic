@@ -89,6 +89,7 @@ module calculator_core #(
   logic clear_regs;      // Clear reg A and reg B to 0, along with neg flags (preserve temp_input)
   logic show_current_op; // Show current op state via o_*_state_display outputs
   logic output_a_not_b;  // Output reg A if 1, reg B if 0
+  logic reset_neg_flags; // Reset both A and B neg flags to 0
   
   // Control Signals - Data Handshake
   logic load_temp;       // Indicate if current loading inputs into temp reg
@@ -113,6 +114,7 @@ module calculator_core #(
   assign o_div_state_display = (current_op == 2'b11) && show_current_op;
   logic [DATA_WIDTH-1:0] output_value; // Value to output to display driver
   logic display_valid;   // Handshake signal for display output
+  assign output_value = output_a_not_b ? reg_a : reg_b;
   assign o_display_data    = output_value;
   assign o_display_valid   = display_valid;
   assign o_display_2s_comp = i_2s_comp_mode;
@@ -120,6 +122,7 @@ module calculator_core #(
   // Full adder instance (for inverting and handling shift + load operations)
   logic [DATA_WIDTH-1:0] fa_a, fa_b, fa_sum;
   logic                  fa_carry_in;
+  logic                  fa_carry_out; // TODO: this is used to handle overflow protections for unsigned values
   full_adder #(
     .DATA_WIDTH(DATA_WIDTH)
   ) fa_inst (
@@ -127,7 +130,7 @@ module calculator_core #(
     .b        (fa_b),
     .carry_in (fa_carry_in),
     .sum      (fa_sum),
-    .carry_out() // Unused
+    .carry_out(fa_carry_out)
   );
 
   // State transition
@@ -136,28 +139,629 @@ module calculator_core #(
       current_state <= AC;
     end else begin
       case (current_state)
-        AC: 
+        AC:
           begin
-            //TODO
+            current_state <= DISPLAY_AFTER_AC;
           end
         DISPLAY_AFTER_AC:
           begin
-            //TODO...
+            current_state <= WAIT_FIRST_INPUT;
+          end
+        WAIT_FIRST_INPUT:
+          begin
+            
+          end
+        FIRST_INPUT_NUMBER:
+          begin
+            
+          end
+        DISPLAY_AFTER_FIRST_INPUT:
+          begin
+            
+          end
+        FIRST_INPUT_OP:
+          begin
+            
+          end
+        FIRST_INPUT_NEG:
+          begin
+            
+          end
+        WAIT_SECOND_INPUT_BEFORE_VALUE:
+          begin
+            
+          end
+        SECOND_INPUT_NEG_BEFORE_VALUE:
+          begin
+            
+          end
+        COPY_A_TO_B:
+          begin
+            
+          end
+        SECOND_INPUT_NUMBER:
+          begin
+            
+          end
+        DISPLAY_AFTER_SECOND_INPUT:
+          begin
+            
+          end
+        WAIT_SECOND_INPUT_AFTER_VALUE:
+          begin
+            
+          end
+        SECOND_INPUT_NEG_AFTER_VALUE:
+          begin
+            
+          end
+        SECOND_INPUT_OP_CALCULATE:
+          begin
+            
+          end
+        SECOND_INPUT_OP_CALCULATE_WAIT_RESULT:
+          begin
+            
+          end
+        DISPLAY_AFTER_SECOND_OP:
+          begin
+            
+          end
+        EQUAL_AFTER_SECOND_VALUE:
+          begin
+            
+          end
+        EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT:
+          begin
+            
+          end
+        DISPLAY_AFTER_EQUAL:
+          begin
+            
+          end
+        WAIT_INPUT_AFTER_EQUAL:
+          begin
+            
+          end
+        INPUT_NEG_AFTER_EQUAL:
+          begin
+            
+          end
+        CLEAR_AFTER_EQUAL:
+          begin
+            
+          end
+        ERROR:
+          begin
+            
+          end
+        default:
+          begin
+            // This should not occur
+            current_state <= AC;
           end
       endcase
     end
   end
+/*logic load_op;         // Load operation from temp register to current_op
+  logic reg_a_load;      // Load value from temp to reg A (with shift left by 4)
+  logic reg_b_load;      // Load value from temp to reg B (with shift left by 4)
+  logic reg_a_invert;    // Invert reg A value (2's comp)
+  logic reg_b_invert;    // Invert reg B value (2's comp)
+  logic clear_regs;      // Clear reg A and reg B to 0, along with neg flags (preserve temp_input)
+  logic show_current_op; // Show current op state via o_*_state_display outputs
+  logic output_a_not_b;  // Output reg A if 1, reg B if 0
+  logic reset_neg_flags; // Reset both A and B neg flags to 0
+
+  button_input_ready
+  logic alu_input_valid; // Handshake signal for ALU input
+  logic alu_out_ready;   // Handshake signals for ALU output
+  display_valid*/
 
   // Control signal combinational logic
   always_comb begin : fsm_control_signals_comb
-    case (current_state)
-      AC: 
+    case (current_state) // TODO
+      AC:
         begin
-          //TODO
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
         end
       DISPLAY_AFTER_AC:
         begin
-          //TODO...
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      WAIT_FIRST_INPUT:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      FIRST_INPUT_NUMBER:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      DISPLAY_AFTER_FIRST_INPUT:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      FIRST_INPUT_OP:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      FIRST_INPUT_NEG:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      WAIT_SECOND_INPUT_BEFORE_VALUE:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      SECOND_INPUT_NEG_BEFORE_VALUE:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      COPY_A_TO_B:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      SECOND_INPUT_NUMBER:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      DISPLAY_AFTER_SECOND_INPUT:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      WAIT_SECOND_INPUT_AFTER_VALUE:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      SECOND_INPUT_NEG_AFTER_VALUE:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      SECOND_INPUT_OP_CALCULATE:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      SECOND_INPUT_OP_CALCULATE_WAIT_RESULT:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      DISPLAY_AFTER_SECOND_OP:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      EQUAL_AFTER_SECOND_VALUE:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      DISPLAY_AFTER_EQUAL:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      WAIT_INPUT_AFTER_EQUAL:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      INPUT_NEG_AFTER_EQUAL:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      CLEAR_AFTER_EQUAL:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      ERROR:
+        begin
+          clear_regs         = 0;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+        end
+      default:
+        begin
+          // This should not occur
+          clear_regs         = 1;
+          reset_neg_flags    = 0;
+
+          load_op            = 0;
+          reg_a_load         = 0;
+          reg_b_load         = 0;
+          
+          reg_a_invert       = 0;
+          reg_b_invert       = 0;
+          
+          show_current_op    = 0;
+          output_a_not_b     = 0;
+
+          button_input_ready = 0;
+          alu_input_valid    = 0;
+          alu_out_ready      = 0;
+          display_valid      = 0;
+
         end
     endcase
   end
@@ -165,54 +769,113 @@ module calculator_core #(
   // Data path blocks
   always_ff @(posedge clk or negedge rst_n) begin : a_register_block
     if (!rst_n) begin
-      
+      reg_a <= '0;
     end else begin
-      
+      if (clear_regs) begin
+        reg_a <= '0;
+      end else if (reg_a_load || reg_a_invert) begin
+        reg_a <= fa_sum; // Load in shifted and added result / inverted result
+      end else if (reading_result) begin
+        reg_a <= i_alu_result; 
+      end
     end
   end
 
   always_ff @(posedge clk or negedge rst_n) begin : b_register_block
     if (!rst_n) begin
-      
+      reg_b <= '0;
     end else begin
-      
+      if (clear_regs) begin
+        reg_b <= '0;
+      end else if (reg_b_load || reg_b_invert) begin
+        reg_b <= fa_sum; // Load in shifted and added result / inverted result
+      end
     end
   end
 
   always_ff @(posedge clk or negedge rst_n) begin : temp_input_register_block
     if (!rst_n) begin
-      
+      temp_input <= '0;
     end else begin
-      //TODO: don't load if we are writing to ALU, only load when alu ready && valid
+      if (load_temp) begin
+        temp_input <= i_button_data[3:0];
+      end
     end
   end
 
   always_ff @(posedge clk or negedge rst_n) begin : current_op_register_block
     if (!rst_n) begin
-      
+      current_op <= 2'b00;
     end else begin
-      
+      if (load_op) begin
+        // Only load the op once current one is read by ALU (if we are writing to ALU)
+        if (o_alu_input_valid) begin
+            if (i_alu_input_ready) current_op <= temp_input[1:0];
+        end else begin
+            current_op <= temp_input[1:0];
+        end
+      end
     end
   end
 
   always_ff @(posedge clk or negedge rst_n) begin : reg_a_input_neg_register_block
     if (!rst_n) begin
-      
+      reg_a_input_neg <= '0;
     end else begin
-      
+      if (clear_regs || reset_neg_flags || ~i_2s_comp_mode) begin
+        // Clear, reset, or not doing negative values
+        reg_a_input_neg <= '0;
+      end else if (reg_a_invert) begin
+        // Toggle the neg flag
+        reg_a_input_neg <= ~reg_a_input_neg;
+      end
     end
   end
 
   always_ff @(posedge clk or negedge rst_n) begin : reg_b_input_neg_register_block
     if (!rst_n) begin
-      
+      reg_b_input_neg <= '0;
     end else begin
-      
+      if (clear_regs || reset_neg_flags || ~i_2s_comp_mode) begin
+        // Clear, reset, or not doing negative values
+        reg_b_input_neg <= '0;
+      end else if (reg_b_invert) begin
+        // Toggle the neg flag
+        reg_b_input_neg <= ~reg_b_input_neg;
+      end
     end
   end
 
   // Adder inputs combinational logic
   always_comb begin : fa_inputs_comb
+    // Default assignments
+    fa_a        = '0;
+    fa_b        = '0;
+    fa_carry_in = 1'b0;
 
+    // Determine adder inputs based on control signals
+    if (reg_a_load) begin
+      // Shift left reg A by 4 and +/- temp_input
+      fa_a = { reg_a[DATA_WIDTH-1:4], 4'b0 }; // TODO: if decimal input, handle by adding another smaller width adder to add (a << 3 + a << 1)
+      fa_b = { {(DATA_WIDTH-4){1'b0}}, temp_input};
+      fa_b = reg_a_input_neg ? ~fa_b : fa_b;
+      fa_carry_in = reg_a_input_neg;
+    end else if (reg_b_load) begin
+      // Shift left reg B by 4 and +/- temp_input
+      fa_a = { reg_b[DATA_WIDTH-1:4], 4'b0 }; // TODO: if decimal input, handle by adding another smaller width adder to add (a << 3 + a << 1)
+      fa_b = { {(DATA_WIDTH-4){1'b0}}, temp_input};
+      fa_b = reg_b_input_neg ? ~fa_b : fa_b;
+      fa_carry_in = reg_b_input_neg;
+    end else if (reg_a_invert) begin
+      // Invert reg A (2's comp)
+      fa_a = ~reg_a;
+      fa_b = '0;
+      fa_carry_in = 1'b1;
+    end else if (reg_b_invert) begin
+      // Invert reg B (2's comp)
+      fa_a = ~reg_b;
+      fa_b = '0;
+      fa_carry_in = 1'b1;
+    end
   end
 endmodule
