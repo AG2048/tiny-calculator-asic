@@ -38,88 +38,181 @@ module calculator_core #(
     output logic                  o_display_valid,
     input  logic                  i_display_ready
 );
-  // Temp assign all input to 0, tie all output to & _unused TODO: remove them
-  logic _unused = &{clk, rst_n, i_button_data, i_button_valid, i_2s_comp_mode, i_alu_result, i_alu_error, i_alu_result_valid, i_display_ready, i_alu_input_ready};
-  assign o_alu_input_a        = {DATA_WIDTH{_unused}};
-  assign o_alu_input_b        = {DATA_WIDTH{_unused}};
-  assign o_alu_input_op       = {2{_unused}};
-  assign o_alu_input_signed   = _unused;
-  assign o_alu_input_valid    = _unused;
-  assign o_alu_result_ready   = _unused;
-  assign o_add_state_display  = _unused;
-  assign o_sub_state_display  = _unused;
-  assign o_mul_state_display  = _unused;
-  assign o_div_state_display  = _unused;
-  assign o_display_data       = {DATA_WIDTH{_unused}};
-  assign o_display_2s_comp    = _unused;
-  assign o_display_valid      = _unused;
-  assign o_button_ready       = _unused;
-  
-  // Enumerate FSM states
+  /*
+    Calculator core module that implements the main FSM and data path for the calculator.
+
+    TODO: add docs
+  */
+
+  // FSM states
   typedef enum logic [4:0] {
-    AC,
-    WAIT_FIRST_INPUT,
-    FIRST_INPUT_NUMBER,
-    DISPLAY_AFTER_FIRST_INPUT,
-    FIRST_INPUT_OP,
-    WAIT_SECOND_INPUT_BEFORE_VALUE,
-    COPY_A_TO_B,
-    SECOND_INPUT_NUMBER,
-    DISPLAY_AFTER_SECOND_INPUT,
-    WAIT_SECOND_INPUT_AFTER_VALUE,
-    SECOND_INPUT_OP_CALCULATE,
-    DISPLAY_AFTER_SECOND_OP,
-    EQUAL_AFTER_SECOND_VALUE,
-    DISPLAY_AFTER_EQUAL,
-    WAIT_INPUT_AFTER_EQUAL,
-    CLEAR_AFTER_EQUAL,
-    ERROR
+    AC,                                    // Pressed AC from any WAIT_INPUT state: clear all registers and flags, go to DISPLAY_AFTER_AC
+    DISPLAY_AFTER_AC,                      // Display cleared reg A value (0), and return to WAIT_FIRST_INPUT
+    WAIT_FIRST_INPUT,                      // Initial waiting input, values latched into temp reg, next state depends on MSB of input (number or op) + specific op (ac, neg) (eq don't do anything here)
+    FIRST_INPUT_NUMBER,                    // PRESSED Number: Shift reg A and load number input (can be signed), DISPLAY_AFTER_FIRST_INPUT next
+    DISPLAY_AFTER_FIRST_INPUT,             // Display updated reg A value and return to WAIT_FIRST_INPUT
+    FIRST_INPUT_OP,                        // PRESSED Op: (both from WAIT_FIRST_INPUT and WAIT_SECOND_INPUT_BEFORE_VALUE): Load operation, display current operation state (and for any subsequent FSM state), WAIT_SECOND_INPUT_BEFORE_VALUE next
+    FIRST_INPUT_NEG,                       // PRESSED (-): negate reg A value and toggle reg_a_input_neg flag (this flag should be reset for AC, EQ), WAIT_FIRST_INPUT next
+    WAIT_SECOND_INPUT_BEFORE_VALUE,        // Wait for second input, next state depends on MSB of input (number or op) + specific op (ac, eq, neg)
+    SECOND_INPUT_NEG_BEFORE_VALUE,         // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_BEFORE_VALUE next (this action alone does not constitute a value input)
+    COPY_A_TO_B,                           // PRESSED Eq: copy reg A to reg B, perform A = A op A, EQUAL_AFTER_SECOND_VALUE next
+    SECOND_INPUT_NUMBER,                   // PRESSED Number: Shift reg B and load number input (can be signed), DISPLAY_AFTER_SECOND_INPUT next
+    DISPLAY_AFTER_SECOND_INPUT,            // Display updated reg B value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
+    WAIT_SECOND_INPUT_AFTER_VALUE,         // Wait for second input after some value has been entered, next state depends on MSB of input (number or op) + specific op (ac, eq, neg)
+    SECOND_INPUT_NEG_AFTER_VALUE,          // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_AFTER_VALUE next
+    SECOND_INPUT_OP_CALCULATE,             // PRESSED Op: A = A op B, and load in new operation while ALU gets old operation, SECOND_INPUT_OP_CALCULATE_WAIT_RESULT next
+    SECOND_INPUT_OP_CALCULATE_WAIT_RESULT, // Wait for ALU result to be valid after SECOND_INPUT_OP_CALCULATE, DISPLAY_AFTER_SECOND_OP next
+    DISPLAY_AFTER_SECOND_OP,               // Display updated reg A value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
+    EQUAL_AFTER_SECOND_VALUE,              // PRESSED Eq: A = A op B, EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT next
+    EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT,  // Wait for ALU result to be valid after EQUAL_AFTER_SECOND_VALUE, DISPLAY_AFTER_EQUAL next
+    DISPLAY_AFTER_EQUAL,                   // Display updated reg A value and return to WAIT_FIRST_INPUT
+    WAIT_INPUT_AFTER_EQUAL,                // Wait for input after equal, next state depends on MSB of input (number or op) + specific op (ac, neg)
+    INPUT_NEG_AFTER_EQUAL,                 // PRESSED (-): negate reg A value (no need for flag since no input can occur without erasing reg A), DISPLAY_AFTER_EQUAL next
+    CLEAR_AFTER_EQUAL,                     // PRESSED Number: after EQUAL, clear and load new number into temp reg (clear all neg flags), FIRST_INPUT_NUMBER next
+    ERROR                                  // If the ALU result ever reads an error from SECOND_INPUT_OP_CALCULATE or EQUAL_AFTER_SECOND_VALUE, go to this state and wait for AC button press
   } fsm_state_t;
 
   fsm_state_t current_state;
 
-  // FSM state transition
+  // Registers
+  logic [DATA_WIDTH-1:0] reg_a, reg_b;    // Main registers A and B to hold input values and ALU results
+  logic [3:0]            temp_input;      // Temporary 4-bit register to hold number input before shifting into reg A or B or op
+  logic [1:0]            current_op;      // Current operation to perform (00: ADD, 01: SUB, 10: MUL, 11: DIV)
+  logic reg_a_input_neg, reg_b_input_neg; // Flags to indicate if reg A or reg B input is negative (so REG = REG << 4 - input).
+
+  // Control Signals - FSM
+  logic load_op;         // Load operation from temp register to current_op
+  logic reg_a_load;      // Load value from temp to reg A (with shift left by 4)
+  logic reg_b_load;      // Load value from temp to reg B (with shift left by 4)
+  logic reg_a_invert;    // Invert reg A value (2's comp)
+  logic reg_b_invert;    // Invert reg B value (2's comp)
+  logic clear_regs;      // Clear reg A and reg B to 0, along with neg flags (preserve temp_input)
+  logic show_current_op; // Show current op state via o_*_state_display outputs
+  logic output_a_not_b;  // Output reg A if 1, reg B if 0
+  
+  // Control Signals - Data Handshake
+  logic load_temp;       // Indicate if current loading inputs into temp reg
+  assign load_temp = i_button_valid && o_button_ready;
+  logic reading_result;  // Indicates if currently reading ALU result into reg A
+  assign reading_result = i_alu_result_valid && o_alu_result_ready;
+  
+  // Output Signals
+  logic button_input_ready; // Handshake signal for button input
+  assign o_button_ready = button_input_ready;
+  logic alu_input_valid; // Handshake signal for ALU input
+  logic alu_out_ready;   // Handshake signals for ALU output
+  assign o_alu_input_a = reg_a;
+  assign o_alu_input_b = reg_b;
+  assign o_alu_input_op = current_op;
+  assign o_alu_input_signed = i_2s_comp_mode;
+  assign o_alu_input_valid = alu_input_valid;
+  assign o_alu_result_ready = alu_out_ready;
+  assign o_add_state_display = (current_op == 2'b00) && show_current_op;
+  assign o_sub_state_display = (current_op == 2'b01) && show_current_op;
+  assign o_mul_state_display = (current_op == 2'b10) && show_current_op;
+  assign o_div_state_display = (current_op == 2'b11) && show_current_op;
+  logic [DATA_WIDTH-1:0] output_value; // Value to output to display driver
+  logic display_valid;   // Handshake signal for display output
+  assign o_display_data    = output_value;
+  assign o_display_valid   = display_valid;
+  assign o_display_2s_comp = i_2s_comp_mode;
+
+  // Full adder instance (for inverting and handling shift + load operations)
+  logic [DATA_WIDTH-1:0] fa_a, fa_b, fa_sum;
+  logic                  fa_carry_in;
+  full_adder #(
+    .DATA_WIDTH(DATA_WIDTH)
+  ) fa_inst (
+    .a        (fa_a),
+    .b        (fa_b),
+    .carry_in (fa_carry_in),
+    .sum      (fa_sum),
+    .carry_out() // Unused
+  );
+
   // State transition
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk or negedge rst_n) begin : fsm_state_register
     if (!rst_n) begin
       current_state <= AC;
     end else begin
       case (current_state)
-        AC:
+        AC: 
           begin
-            current_state <= WAIT_FIRST_INPUT;
+            //TODO
           end
-        WAIT_FIRST_INPUT:
+        DISPLAY_AFTER_AC:
           begin
-            if (i_button_valid && o_button_ready) begin
-              if (i_button_data[4] == 1'b0) begin
-                // Number input
-                current_state <= FIRST_INPUT_NUMBER;
-              end else begin
-                if (i_button_data == 5'b10101) begin
-                  // AC pressed, move to AC state
-                  current_state <= AC;
-                end else if (i_button_data != 5'b10100) begin
-                  // For all buttons other than EQ, move to FIRST_INPUT_OP
-                  // TODO: NEG button may require some special flags
-                  current_state <= FIRST_INPUT_OP;
-                end
-              end
-            end
-          end
-        FIRST_INPUT_NUMBER:
-          begin
-            // Value should be loaded into reg A in 1 cycle
-            current_state <= DISPLAY_AFTER_FIRST_INPUT;
-          end
-        DISPLAY_AFTER_FIRST_INPUT:
-          begin
-            // Wait for value to be sent to display
-            if (o_display_valid && i_display_ready) begin
-            end
+            //TODO...
           end
       endcase
     end
   end
 
+  // Control signal combinational logic
+  always_comb begin : fsm_control_signals_comb
+    case (current_state)
+      AC: 
+        begin
+          //TODO
+        end
+      DISPLAY_AFTER_AC:
+        begin
+          //TODO...
+        end
+    endcase
+  end
+
+  // Data path blocks
+  always_ff @(posedge clk or negedge rst_n) begin : a_register_block
+    if (!rst_n) begin
+      
+    end else begin
+      
+    end
+  end
+
+  always_ff @(posedge clk or negedge rst_n) begin : b_register_block
+    if (!rst_n) begin
+      
+    end else begin
+      
+    end
+  end
+
+  always_ff @(posedge clk or negedge rst_n) begin : temp_input_register_block
+    if (!rst_n) begin
+      
+    end else begin
+      //TODO: don't load if we are writing to ALU, only load when alu ready && valid
+    end
+  end
+
+  always_ff @(posedge clk or negedge rst_n) begin : current_op_register_block
+    if (!rst_n) begin
+      
+    end else begin
+      
+    end
+  end
+
+  always_ff @(posedge clk or negedge rst_n) begin : reg_a_input_neg_register_block
+    if (!rst_n) begin
+      
+    end else begin
+      
+    end
+  end
+
+  always_ff @(posedge clk or negedge rst_n) begin : reg_b_input_neg_register_block
+    if (!rst_n) begin
+      
+    end else begin
+      
+    end
+  end
+
+  // Adder inputs combinational logic
+  always_comb begin : fa_inputs_comb
+
+  end
 endmodule
