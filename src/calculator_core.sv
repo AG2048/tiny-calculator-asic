@@ -380,6 +380,7 @@ module calculator_core #(
     case (current_state)
       AC:
         begin
+          // Pressed AC from any WAIT_INPUT state: clear all registers and flags, go to DISPLAY_AFTER_AC
           clear_regs         = 1;
           reset_neg_flags    = 1;
           clear_reg_b        = 0;
@@ -401,6 +402,7 @@ module calculator_core #(
         end
       DISPLAY_AFTER_AC:
         begin
+          // Display cleared reg A value (0), and return to WAIT_FIRST_INPUT
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -422,6 +424,7 @@ module calculator_core #(
         end
       WAIT_FIRST_INPUT:
         begin
+          // Initial waiting input, values latched into temp reg, next state depends on MSB of input (number or op) + specific op (ac, neg) (eq don't do anything here)
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -443,6 +446,7 @@ module calculator_core #(
         end
       FIRST_INPUT_NUMBER:
         begin
+          // PRESSED Number: Shift reg A and load number input (can be signed), DISPLAY_AFTER_FIRST_INPUT next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -464,6 +468,7 @@ module calculator_core #(
         end
       DISPLAY_AFTER_FIRST_INPUT:
         begin
+          // Display updated reg A value and return to WAIT_FIRST_INPUT
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -485,6 +490,7 @@ module calculator_core #(
         end
       FIRST_INPUT_OP:
         begin
+          // PRESSED Op: (both from WAIT_FIRST_INPUT and WAIT_SECOND_INPUT_BEFORE_VALUE): Load operation, display current operation state (and for any subsequent FSM state), WAIT_SECOND_INPUT_BEFORE_VALUE next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -506,6 +512,7 @@ module calculator_core #(
         end
       FIRST_INPUT_NEG:
         begin
+          // PRESSED (-): negate reg A value and toggle reg_a_input_neg flag (this flag should be reset for AC, EQ), WAIT_FIRST_INPUT next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -527,6 +534,7 @@ module calculator_core #(
         end
       WAIT_SECOND_INPUT_BEFORE_VALUE:
         begin
+          // Wait for second input, next state depends on MSB of input (number or op) + specific op (ac, eq, neg)
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -548,6 +556,7 @@ module calculator_core #(
         end
       SECOND_INPUT_NEG_BEFORE_VALUE:
         begin
+          // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_BEFORE_VALUE next (this action alone does not constitute a value input)
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -569,6 +578,7 @@ module calculator_core #(
         end
       COPY_A_TO_B:
         begin
+          // PRESSED Eq: copy reg A to reg B, perform A = A op A, EQUAL_AFTER_SECOND_VALUE next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -590,6 +600,7 @@ module calculator_core #(
         end
       SECOND_INPUT_NUMBER:
         begin
+          // PRESSED Number: Shift reg B and load number input (can be signed), DISPLAY_AFTER_SECOND_INPUT next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -611,6 +622,7 @@ module calculator_core #(
         end
       DISPLAY_AFTER_SECOND_INPUT:
         begin
+          // Display updated reg B value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -632,6 +644,7 @@ module calculator_core #(
         end
       WAIT_SECOND_INPUT_AFTER_VALUE:
         begin
+          // Wait for second input after some value has been entered, next state depends on MSB of input (number or op) + specific op (ac, eq, neg)
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -653,6 +666,7 @@ module calculator_core #(
         end
       SECOND_INPUT_NEG_AFTER_VALUE:
         begin
+          // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_AFTER_VALUE next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -674,6 +688,7 @@ module calculator_core #(
         end
       SECOND_INPUT_OP_CALCULATE:
         begin
+          // PRESSED Op: A = A op B, and load in new operation while ALU gets old operation, SECOND_INPUT_OP_CALCULATE_WAIT_RESULT next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -695,6 +710,7 @@ module calculator_core #(
         end
       SECOND_INPUT_OP_CALCULATE_WAIT_RESULT:
         begin
+          // Wait for ALU result to be valid after SECOND_INPUT_OP_CALCULATE, DISPLAY_AFTER_SECOND_OP next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -716,6 +732,7 @@ module calculator_core #(
         end
       DISPLAY_AFTER_SECOND_OP:
         begin
+          // Display updated reg A value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -737,6 +754,7 @@ module calculator_core #(
         end
       EQUAL_AFTER_SECOND_VALUE:
         begin
+          // PRESSED Eq: A = A op B, EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -758,6 +776,7 @@ module calculator_core #(
         end
       EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT:
         begin
+          // Wait for ALU result to be valid after EQUAL_AFTER_SECOND_VALUE, DISPLAY_AFTER_EQUAL next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -779,6 +798,7 @@ module calculator_core #(
         end
       DISPLAY_AFTER_EQUAL:
         begin
+          // Display updated reg A value and move to WAIT_INPUT_AFTER_EQUAL
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -800,6 +820,7 @@ module calculator_core #(
         end
       WAIT_INPUT_AFTER_EQUAL:
         begin
+          // Wait for input after equal, next state depends on MSB of input (number or op) + specific op (ac, neg)
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -821,6 +842,7 @@ module calculator_core #(
         end
       INPUT_NEG_AFTER_EQUAL:
         begin
+          // PRESSED (-): negate reg A value (no need for flag since no input can occur without erasing reg A), DISPLAY_AFTER_EQUAL next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -842,6 +864,7 @@ module calculator_core #(
         end
       CLEAR_AFTER_EQUAL:
         begin
+          // PRESSED Number: after EQUAL, clear and load new number into temp reg (clear all neg flags), FIRST_INPUT_NUMBER next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -863,6 +886,7 @@ module calculator_core #(
         end
       DISPLAY_ERROR:
         begin
+          // If the ALU result ever reads an error from SECOND_INPUT_OP_CALCULATE or EQUAL_AFTER_SECOND_VALUE, go to this state and wait for AC button press
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -884,6 +908,7 @@ module calculator_core #(
         end
       ERROR_WAIT:
         begin
+          // Wait in error state until AC is pressed
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
