@@ -776,7 +776,7 @@ display_valid
           reg_a_invert       = 0;
           reg_b_invert       = 0;
           
-          show_current_op    = 1;
+          show_current_op    = 0; // Don't show new op here (since new op is loaded, but running old op)
           output_a_not_b     = 0;
 
           button_input_ready = 0;
