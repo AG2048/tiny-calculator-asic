@@ -62,7 +62,7 @@ module tt_um_ag2048_calculator (
 
   wire                  o_sr_data;
   wire                  o_sr_clk;
-  wire                  o_sr_latch;
+  wire                  o_sr_oe_n;
 
   // Assign uio pins direction and unused pins
   assign uio_oe       = 8'b00111100;          // uio[2:5] are outputs, others are inputs
@@ -76,9 +76,9 @@ module tt_um_ag2048_calculator (
   assign uio_out[4]  = o_mul_state_display;
   assign uio_out[5]  = o_div_state_display;
   assign uo_out[4]   = o_sr_data;
-  assign uo_out[5]   = o_sr_clk;
-  assign uo_out[6]   = o_sr_latch;
-  assign uo_out[7]   = alu_output_error; // Indicate error on dedicated output pin
+  assign uo_out[5]   = o_sr_clk; // Technically this can be removed if we use a shift register that have a latch option, so just keep flushing and only "latch" when needed. TODO: make space for hex/dec switch?
+  assign uo_out[6]   = o_sr_oe_n; // TODO: or we can just only clk shift data out with no latch?
+  assign uo_out[7]   = alu_output_error; // Indicate error on dedicated output pin TODO: can be removed? make space for Common Anode / Common Cathode switch? Output Hex/Dec switch?
   // Assign Input Pins to signals
   assign i_bit_lines        = ui_in[3:0];
   assign i_add_pin          = ui_in[4];
@@ -183,7 +183,7 @@ module tt_um_ag2048_calculator (
 
       .o_sr_data     (o_sr_data),
       .o_sr_clk      (o_sr_clk),
-      .o_sr_latch    (o_sr_latch)
+      .o_sr_oe_n     (o_sr_oe_n)
   );
 
 endmodule

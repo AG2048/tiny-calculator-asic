@@ -44,7 +44,7 @@ pinout:
   uo[3]: "Numpad Word Line 3"
   uo[4]: "SR SER (Data)"
   uo[5]: "SR SRCLK (Shift Clock)"
-  uo[6]: "SR RCLK (Latch Clock)"
+  uo[6]: "SR OE_n (Output Enable)"
   uo[7]: "Div 0 Error Pin"
 
   # Bidirectional pins

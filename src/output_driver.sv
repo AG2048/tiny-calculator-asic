@@ -20,7 +20,7 @@ module output_driver #(
 
     output logic                  o_sr_data,
     output logic                  o_sr_clk,
-    output logic                  o_sr_latch
+    output logic                  o_sr_oe_n
 );
   /*
     Output driver module that:
@@ -38,6 +38,8 @@ module output_driver #(
       (TODO: When data is negative, the conversion may be different)
       (TODO: Must flush the shift register with EMPTY before sending new data / or we can send a reset signal to the shift register first)
   */
+  localparam DISPLAYS_COUNTER_WIDTH = $clog2(NUM_7_SEG_DISPLAYS);
+  localparam PER_DISPLAY_COUNTER_WIDTH = 3; // Count from 0 to 6 
 
 // TODO: remove these: Temp assign all input to 0, tie all output to ^ _unused
 logic temp = ^{clk, rst_n, i_data, i_error, i_data_is_neg, i_valid};
@@ -45,5 +47,79 @@ assign o_sr_data  = temp;
 assign o_sr_clk   = temp;
 assign o_sr_latch = temp;
 assign o_ready    = temp;
+
+  typedef enum logic [2:0] {
+    LOAD_INPUT,
+    CLEAR_OUTPUT,
+    DISPLAY_DATA,
+    DISPLAY_ERROR,
+    OUTPUT_DONE
+  } output_driver_state_t;
+
+  output_driver_state_t current_state;
+
+  // Counters
+  logic [DISPLAYS_COUNTER_WIDTH-1:0] display_counter;
+  logic [PER_DISPLAY_COUNTER_WIDTH-1:0] per_display_counter;
+
+  // Registers
+  logic [DATA_WIDTH-1:0] data_reg;
+  logic                  data_is_neg_reg;
+  logic                  error_reg;
+
+  // Control signals
+  logic oe; // o_sr_clk output enable
+  logic latch_en; // o_sr_latch enable
+
+  // Output
+  assign o_sr_clk = oe ? clk : 1'b1; // Since shift register shifts on rising edge, hold clk high to prevent shifting
+  assign o_sr_latch = latch_en; // Latch once on rising edge
+
+
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      current_state <= LOAD_INPUT;
+    end else begin
+      case (current_state)
+        LOAD_INPUT: 
+          begin
+            if (i_valid && o_ready) begin
+                // On valid input, move to clear output state
+                current_state <= CLEAR_OUTPUT;
+            end
+          end
+        CLEAR_OUTPUT: 
+          begin
+            // After clearing output, go back to loading input
+            if (display_counter == 0 && per_display_counter == 0) begin
+              current_state <= error_reg ? DISPLAY_ERROR : DISPLAY_DATA;
+            end
+          end
+        DISPLAY_DATA: 
+          begin
+            // After displaying data, go back to loading input
+            if (display_counter == 0 && per_display_counter == 0) begin
+              current_state <= OUTPUT_DONE;
+            end
+          end
+        DISPLAY_ERROR: 
+          begin
+            // After displaying error, go back to loading input
+            if (display_counter == 0 && per_display_counter == 0) begin
+              current_state <= OUTPUT_DONE;
+            end
+          end
+        OUTPUT_DONE:
+          begin
+            // After output done, go back to loading input
+            current_state <= LOAD_INPUT;
+          end 
+        default: 
+          begin
+            current_state <= LOAD_INPUT;
+          end
+      endcase
+    end
+  end
 
 endmodule
