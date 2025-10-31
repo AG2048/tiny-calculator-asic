@@ -73,12 +73,12 @@ assign o_ready    = temp;
 
   // Output
   assign o_sr_clk = oe ? clk : 1'b1; // Since shift register shifts on rising edge, hold clk high to prevent shifting
-  assign o_sr_latch = latch_en; // Latch once on rising edge
+  assign o_sr_oe_n = latch_en; // Latch once on rising edge
 
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      current_state <= LOAD_INPUT;
+      current_state <= CLEAR_OUTPUT;
     end else begin
       case (current_state)
         LOAD_INPUT: 
