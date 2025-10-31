@@ -53,14 +53,14 @@ module calculator_core #(
     FIRST_INPUT_NUMBER,                    // PRESSED Number: Shift reg A and load number input (can be signed), DISPLAY_AFTER_FIRST_INPUT next
     DISPLAY_AFTER_FIRST_INPUT,             // Display updated reg A value and return to WAIT_FIRST_INPUT
     FIRST_INPUT_OP,                        // PRESSED Op: (both from WAIT_FIRST_INPUT and WAIT_SECOND_INPUT_BEFORE_VALUE): Load operation, display current operation state (and for any subsequent FSM state), WAIT_SECOND_INPUT_BEFORE_VALUE next
-    FIRST_INPUT_NEG,                       // PRESSED (-): negate reg A value and toggle reg_a_input_neg flag (this flag should be reset for AC, EQ), WAIT_FIRST_INPUT next
+    FIRST_INPUT_NEG,                       // PRESSED (-): negate reg A value and toggle reg_a_input_neg flag (this flag should be reset for AC, EQ), DISPLAY_AFTER_FIRST_INPUT next
     WAIT_SECOND_INPUT_BEFORE_VALUE,        // Wait for second input, next state depends on MSB of input (number or op) + specific op (ac, eq, neg)
     SECOND_INPUT_NEG_BEFORE_VALUE,         // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_BEFORE_VALUE next (this action alone does not constitute a value input)
     COPY_A_TO_B,                           // PRESSED Eq: copy reg A to reg B, perform A = A op A, EQUAL_AFTER_SECOND_VALUE next
     SECOND_INPUT_NUMBER,                   // PRESSED Number: Shift reg B and load number input (can be signed), DISPLAY_AFTER_SECOND_INPUT next
     DISPLAY_AFTER_SECOND_INPUT,            // Display updated reg B value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
     WAIT_SECOND_INPUT_AFTER_VALUE,         // Wait for second input after some value has been entered, next state depends on MSB of input (number or op) + specific op (ac, eq, neg)
-    SECOND_INPUT_NEG_AFTER_VALUE,          // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_AFTER_VALUE next
+    SECOND_INPUT_NEG_AFTER_VALUE,          // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), DISPLAY_AFTER_SECOND_INPUT next
     SECOND_INPUT_OP_CALCULATE,             // PRESSED Op: A = A op B, and load in new operation while ALU gets old operation, SECOND_INPUT_OP_CALCULATE_WAIT_RESULT next
     SECOND_INPUT_OP_CALCULATE_WAIT_RESULT, // Wait for ALU result to be valid after SECOND_INPUT_OP_CALCULATE, DISPLAY_AFTER_SECOND_OP next
     DISPLAY_AFTER_SECOND_OP,               // Display updated reg A value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
@@ -198,7 +198,7 @@ module calculator_core #(
         FIRST_INPUT_NEG:
           begin
             // PRESSED (-): negate reg A value and toggle reg_a_input_neg flag (this flag should be reset for AC, EQ), WAIT_FIRST_INPUT next
-            current_state <= WAIT_FIRST_INPUT;
+            current_state <= DISPLAY_AFTER_FIRST_INPUT;
           end
         WAIT_SECOND_INPUT_BEFORE_VALUE:
           begin
@@ -272,8 +272,8 @@ module calculator_core #(
           end
         SECOND_INPUT_NEG_AFTER_VALUE:
           begin
-            // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_AFTER_VALUE next
-            current_state <= WAIT_SECOND_INPUT_AFTER_VALUE;
+            // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), DISPLAY_AFTER_SECOND_INPUT next
+            current_state <= DISPLAY_AFTER_SECOND_INPUT;
           end
         SECOND_INPUT_OP_CALCULATE:
           begin
@@ -547,7 +547,7 @@ display_valid
         end
       FIRST_INPUT_NEG:
         begin
-          // PRESSED (-): negate reg A value and toggle reg_a_input_neg flag (this flag should be reset for AC, EQ), WAIT_FIRST_INPUT next
+          // PRESSED (-): negate reg A value and toggle reg_a_input_neg flag (this flag should be reset for AC, EQ), DISPLAY_AFTER_FIRST_INPUT next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
@@ -715,7 +715,7 @@ display_valid
         end
       SECOND_INPUT_NEG_AFTER_VALUE:
         begin
-          // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_AFTER_VALUE next
+          // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), DISPLAY_AFTER_SECOND_INPUT next
           clear_regs         = 0;
           reset_neg_flags    = 0;
           clear_reg_b        = 0;
