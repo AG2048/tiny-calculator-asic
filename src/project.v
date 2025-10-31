@@ -16,7 +16,7 @@ module tt_um_ag2048_calculator (
     input  wire       rst_n     // reset_n - low to reset
 );
   // Localparam definitions
-  localparam DATA_WIDTH = 12;
+  localparam DATA_WIDTH = 16;
   localparam NUM_7_SEG_DISPLAYS = 5;
   
   // Internal signal declarations
