@@ -1035,8 +1035,17 @@ display_valid
     end else begin
       if (clear_regs) begin
         reg_a <= '0;
-      end else if (reg_a_load || reg_a_invert) begin
-        reg_a <= fa_sum; // Load in shifted and added result / inverted result
+      end else if (reg_a_invert) begin
+        reg_a <= fa_sum; // Load in inverted result
+      end else if (reg_a_load) begin
+        // Overflow protection for shift and add
+        if (~i_2s_comp_mode && ~(|reg_a[DATA_WIDTH-1: DATA_WIDTH-4])) begin
+          // Unsigned mode, and all 4 upper bits are 0
+          reg_a <= fa_sum;
+        end else if (i_2s_comp_mode && ((&reg_a[DATA_WIDTH-1: DATA_WIDTH-4]) || ~(|reg_a[DATA_WIDTH-1: DATA_WIDTH-4])) && (fa_sum[DATA_WIDTH-1] == reg_a[DATA_WIDTH-1])) begin
+          // Signed mode, all 4 upper bits are all 1 or all 0, AND result has same sign as beginning
+          reg_a <= fa_sum;
+        end
       end else if (reading_result) begin
         reg_a <= i_alu_result; 
       end
@@ -1051,8 +1060,17 @@ display_valid
         reg_b <= '0;
       end else if (reg_b_load_a) begin
         reg_b <= reg_a;
-      end else if (reg_b_load || reg_b_invert) begin
-        reg_b <= fa_sum; // Load in shifted and added result / inverted result
+      end else if (reg_b_invert) begin
+        reg_b <= fa_sum; // Load in inverted result
+      end else if (reg_b_load) begin
+        // Overflow protection for shift and add
+        if (~i_2s_comp_mode && ~(|reg_b[DATA_WIDTH-1: DATA_WIDTH-4])) begin
+          // Unsigned mode, and all 4 upper bits are 0
+          reg_b <= fa_sum;
+        end else if (i_2s_comp_mode && ((&reg_b[DATA_WIDTH-1: DATA_WIDTH-4]) || ~(|reg_b[DATA_WIDTH-1: DATA_WIDTH-4])) && (fa_sum[DATA_WIDTH-1] == reg_b[DATA_WIDTH-1])) begin
+          // Signed mode, all 4 upper bits are all 1 or all 0, AND result has same sign as beginning
+          reg_b <= fa_sum;
+        end
       end
     end
   end
