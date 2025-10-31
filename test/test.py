@@ -8,6 +8,8 @@ from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge, ValueChange, E
 import os
 import random
 
+DATA_WIDTH = 16
+
 class ButtonValueReader:
     def __init__(self, signal_data, signal_ready, signal_valid, clk, ready_mode="ALWAYS_ON", num_reads=100, random_delay_min_cyc=1, random_delay_max_cyc=10, expected_values_list=None):
         self._signal_data = signal_data
@@ -530,6 +532,7 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     test_2s_complement=[True, False],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
+    allow_error=[False, True], # Allow i_error
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))]
 )
@@ -547,7 +550,7 @@ async def test_output_driver():
     output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
-    signal_width=[16]  # Currently only 16 is supported
+    signal_width=[DATA_WIDTH]  # Currently only 16 is supported
 )
 async def test_alu(dut, test_2s_complement, input_value_range_width, operation_sequence, test_only_certain_ops, input_valid_timing, output_ready_timing, num_samples, timeout_ms, signal_width):
     alu = dut.user_project.alu_inst
@@ -731,6 +734,66 @@ async def test_alu(dut, test_2s_complement, input_value_range_width, operation_s
         else:
             cocotb.log.info(f"Match at index {i}: A={a}, B={b}, OP={op}, RESULT={received_result}, ERROR={received_error}")
     assert num_errors == 0, f"ALU test failed with {num_errors} errors."
+
+def test_sequence_generator(include_neg_button, test_sequence_type, num_samples, sequence_length, allow_random_ac_presses):
+    """
+    Generate a sequence of button presses based on the specified parameters. 
+
+    Note: This is just the button sequences. It does not concern 2's complement settings. 
+    If we want to test with negative values, must check results in other parts of the testbench. (This is just the input)
+
+    include_neg_button: str
+        "NO_NEGATIVE_INPUT": never press the neg button
+        "NEGATIVE_INPUT_AFTER_VAL_INPUT": only press neg button after a value input, or after = button
+        "NEGATIVE_INPUT_IN_BETWEEN_VAL_INPUT": can press neg button anytime between value inputs
+    test_sequence_type: str
+        "ONE": always: Input number -> OP -> Input number -> = -> AC
+        "SEQUENCE_BY_OP": NUM -> OP -> NUM -> OP -> NUM ... -> ... -> AC
+        "SEQUENCE_AFTER_EQ": NUM -> OP -> NUM -> = -> OP -> NUM -> = ... -> AC
+        "RANDOM_BUTTON_PRESS": literally press ANY button randomly 
+    num_samples: int
+        Number of sequences to generate
+    sequence_length: int
+        Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
+    allow_random_ac_presses: bool
+        If True, allow random AC presses in sequences
+
+    Returns a list of button press sequences:
+    [
+        Button 1,
+        Button 2,
+        ...
+    ]
+    Each value is a SINGLE button press -- so value: 0x1234 means press button '1', then '2', then '3', then '4' in sequence.
+    """
+    value_list = []
+    possible_digits = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"]
+    possible_ops = ["+", "-", "*", "/"]
+    neg_op = "(-)"
+    ac_op = "AC"
+    eq_op = "="
+
+@cocotb.test(skip=os.environ.get("GATES")=="yes")
+@cocotb.parametrize(
+    test_2s_complement=[False, True],  # Whether to test in 2's complement mode
+    include_neg_button=["NO_NEGATIVE_INPUT", "NEGATIVE_INPUT_AFTER_VAL_INPUT", "NEGATIVE_INPUT_IN_BETWEEN_VAL_INPUT"],  # If False, never press the neg button
+    test_sequence_type=["ONE", "SEQUENCE_BY_OP", "SEQUENCE_AFTER_EQ", "RANDOM_BUTTON_PRESS"],  
+        # ONE: always: AC -> Input number -> OP -> Input number -> = -> AC
+        # SEQUENCE_BY_OP: AC -> NUM -> OP -> NUM -> OP -> NUM ... -> ... -> AC
+        # SEQUENCE_AFTER_EQ: AC -> NUM -> OP -> NUM -> = -> OP -> NUM -> = ... -> AC
+        # RANDOM_BUTTON_PRESS: literally press ANY button randomly 
+        # In any sequence, AC is only pressed at end. 
+    sequence_length=[5, 10, 20, 50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
+    allow_random_ac_presses=[False, True],  # If True, allow random AC presses in sequences
+    input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
+    output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
+    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
+    timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
+    signal_width=[DATA_WIDTH]
+)
+async def test_core(dut, test_2s_complement, include_neg_button, test_individual_compute, input_valid_timing, output_ready_timing, num_samples, timeout_ms, signal_width):
+    cocotb.log.info(f"Starting Core test with test_2s_complement={test_2s_complement}, include_neg_button={include_neg_button}, test_individual_compute={test_individual_compute}, input_valid_timing={input_valid_timing}, output_ready_timing={output_ready_timing}, num_samples={num_samples}")
+    assert 1==2, "Not implemented yet."
 
 
 @cocotb.test()
