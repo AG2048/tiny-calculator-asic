@@ -45,7 +45,7 @@ module output_driver #(
 logic temp = ^{clk, rst_n, i_data, i_error, i_data_is_neg, i_valid};
 assign o_sr_data  = temp;
 assign o_sr_clk   = temp;
-assign o_sr_latch = temp;
+assign o_sr_oe_n  = temp;
 assign o_ready    = temp;
 
   typedef enum logic [2:0] {
