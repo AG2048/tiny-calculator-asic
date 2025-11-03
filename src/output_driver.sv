@@ -86,13 +86,13 @@ module output_driver #(
   generate
     // Create a combinational logic block for each display
     for (i = 0; i < NUM_7_SEG_DISPLAYS; i++) begin : display_comb_logic
-      if (i * 4 + 4 <= DATA_WIDTH) begin
+      if (i * 4 + 4 <= DATA_WIDTH) begin : gen_full_bits
         // Full 4 bits available
         assign display_data_is_non_zero[i] = |data_reg[i*4 +:4];
-      end else if (i * 4 < DATA_WIDTH) begin
+      end else if (i * 4 < DATA_WIDTH) begin : gen_partial_bits
         // Partial bits available
         assign display_data_is_non_zero[i] = |data_reg[i*4 +: (DATA_WIDTH - i*4)];
-      end else begin
+      end else begin : gen_no_bits
         // No bits available
         assign display_data_is_non_zero[i] = 1'b0;
       end
