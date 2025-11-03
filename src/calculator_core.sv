@@ -378,26 +378,7 @@ module calculator_core #(
       endcase
     end
   end
-/*
-logic clear_regs;      // Clear reg A and reg B to 0, along with neg flags (preserve temp_input)
-logic clear_reg_b;     // Clear reg B only (when in wait_second_input_before_values)
-logic reset_neg_flags; // Reset both A and B neg flags to 0
 
-logic load_op;         // Load operation from temp register to current_op
-logic reg_a_load;      // Load value from temp to reg A (with shift left by 4)
-logic reg_b_load;      // Load value from temp to reg B (with shift left by 4)
-
-logic reg_a_invert;    // Invert reg A value (2's comp)
-logic reg_b_invert;    // Invert reg B value (2's comp)
-
-logic show_current_op; // Show current op state via o_*_state_display outputs
-logic output_a_not_b;  // Output reg A if 1, reg B if 0
-
-button_input_ready
-logic alu_input_valid; // Handshake signal for ALU input
-logic alu_out_ready;   // Handshake signals for ALU output
-display_valid
-*/
   // Control signal combinational logic
   always_comb begin : fsm_control_signals_comb
     case (current_state)
