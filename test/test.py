@@ -735,7 +735,7 @@ async def test_alu(dut, test_2s_complement, input_value_range_width, operation_s
             cocotb.log.info(f"Match at index {i}: A={a}, B={b}, OP={op}, RESULT={received_result}, ERROR={received_error}")
     assert num_errors == 0, f"ALU test failed with {num_errors} errors."
 
-def test_sequence_generator(include_neg_button, test_sequence_type, num_samples, sequence_length, allow_random_ac_presses):
+def test_sequence_generator(include_neg_button, test_sequence_type, num_samples, sequence_length, allow_random_ac_presses, test_overflow, data_width, test_2s_complement):
     """
     Generate a sequence of button presses based on the specified parameters. 
 
@@ -757,6 +757,12 @@ def test_sequence_generator(include_neg_button, test_sequence_type, num_samples,
         Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
     allow_random_ac_presses: bool
         If True, allow random AC presses in sequences
+    test_overflow: bool
+        If True, allow input values that may be over limit (based on data_width and 2's complement setting)
+    data_width: int
+        Width of data (e.g., 4, 8, 16)
+    test_2s_complement: bool
+        If True, test in 2's complement mode (input now ranges from -2^(data_width-1) to 2^(data_width-1)-1)
 
     Returns a list of button press sequences:
     [
@@ -773,6 +779,237 @@ def test_sequence_generator(include_neg_button, test_sequence_type, num_samples,
     ac_op = "AC"
     eq_op = "="
 
+    possible_value_min = 0 if not test_2s_complement else - (1 << (data_width - 1))
+    possible_value_max = (1 << data_width) -1 if not test_2s_complement else (1 << (data_width -1)) -1
+    if include_neg_button == "NO_NEGATIVE_INPUT":
+        possible_value_min = max(0, possible_value_min)
+
+    def add_number_input():
+        # First generate the value
+        number_input = random.randint(possible_value_min, possible_value_max)
+        
+        # split number input into HEX digits from MSB to LSB
+        number_input_breakdown = []
+        if number_input < 0:
+            abs_number_input = -number_input
+        else:
+            abs_number_input = number_input
+        num_hex_digits = (data_width + 3) // 4
+        for digit_idx in range(num_hex_digits-1, -1, -1):
+            hex_digit = (abs_number_input >> (digit_idx *4)) & 0xF
+            if len(number_input_breakdown) == 0 and hex_digit == 0:
+                # Skip leading zeros
+                continue
+            number_input_breakdown.append(possible_digits[hex_digit])
+
+        # Generate negative button presses
+        num_negative_button_presses = random.randint(0, 3)
+        if number_input < 0:
+            num_negative_button_presses = num_negative_button_presses * 2 + 1
+        else:
+            num_negative_button_presses = num_negative_button_presses * 2
+        if include_neg_button == "NO_NEGATIVE_INPUT":
+            num_negative_button_presses = 0
+        elif include_neg_button == "NEGATIVE_INPUT_AFTER_VAL_INPUT":
+            if number_input < 0:
+                number_input_breakdown.append("(-)")
+        elif include_neg_button == "NEGATIVE_INPUT_IN_BETWEEN_VAL_INPUT":
+            # Note this will be ignored for not 2's comp mode
+            for _ in range(num_negative_button_presses):
+                number_input_breakdown.insert(random.randint(0, len(number_input_breakdown)), "(-)")
+        else:
+            raise ValueError(f"Unknown include_neg_button: {include_neg_button}")
+
+        # If test overflow, add randomly 0 to 3 digits at end
+        if test_overflow:
+            num_extra_digits = random.randint(0, 3)
+            for _ in range(num_extra_digits):
+                extra_digit = random.choice(possible_digits)
+                number_input_breakdown.append(extra_digit)
+        
+        value_list.extend(number_input_breakdown)
+    
+    for sample_idx in range(num_samples):
+        if sample_idx > 0:
+            # Add AC at start of new sample
+            value_list.append(ac_op)
+        sequence_count = 0
+        while sequence_count < sequence_length:
+            if test_sequence_type == "ONE":
+                # First generate the value
+                add_number_input()
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+
+                # Generate op
+                value_list.append(random.choice(possible_ops))
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+
+                # Generate next number input
+                add_number_input()
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+
+                # Generate equal sign
+                value_list.append(eq_op)
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+
+            elif test_sequence_type == "SEQUENCE_BY_OP":
+                # First generate the value
+                add_number_input()
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+
+                # Generate op
+                value_list.append(random.choice(possible_ops))
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+            elif test_sequence_type == "SEQUENCE_AFTER_EQ":
+                # Generate a value if it's the very first one
+                if sequence_count == 0:
+                    add_number_input()
+                    sequence_count += 1
+                    # Randomly add AC presses if allowed
+                    if allow_random_ac_presses:
+                        if random.random() < 0.1:  # 10% chance to add AC press
+                            value_list.append(ac_op)
+                            # Do not increment sequence_count for AC press
+
+                    if sequence_count >= sequence_length:
+                        break
+
+                # Generate op
+                value_list.append(random.choice(possible_ops))
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+
+                # Generate next number input
+                add_number_input()
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+
+                # Generate equal sign
+                value_list.append(eq_op)
+                sequence_count += 1
+                # Randomly add AC presses if allowed
+                if allow_random_ac_presses:
+                    if random.random() < 0.1:  # 10% chance to add AC press
+                        value_list.append(ac_op)
+                        # Do not increment sequence_count for AC press
+
+                if sequence_count >= sequence_length:
+                    break
+            elif test_sequence_type == "RANDOM_BUTTON_PRESS":
+                button_options = ["NUMBER", "NEG", "OP", "EQ"]
+                button_choice = random.choice(button_options)
+                if button_choice == "NUMBER":
+                    add_number_input()
+                    sequence_count += 1
+                    # Randomly add AC presses if allowed
+                    if allow_random_ac_presses:
+                        if random.random() < 0.1:  # 10% chance to add AC press
+                            value_list.append(ac_op)
+                            # Do not increment sequence_count for AC press
+
+                    if sequence_count >= sequence_length:
+                        break
+                elif button_choice == "NEG":
+                    if include_neg_button == "NO_NEGATIVE_INPUT":
+                        continue  # Skip this choice
+                    value_list.append(neg_op)
+                    # This case it counts towards sequence length
+                    sequence_count += 1
+                    # Randomly add AC presses if allowed
+                    if allow_random_ac_presses:
+                        if random.random() < 0.1:  # 10% chance to add AC press
+                            value_list.append(ac_op)
+                            # Do not increment sequence_count for AC press
+                    if sequence_count >= sequence_length:
+                        break
+                elif button_choice == "OP":
+                    value_list.append(random.choice(possible_ops))
+                    sequence_count += 1
+                    # Randomly add AC presses if allowed
+                    if allow_random_ac_presses:
+                        if random.random() < 0.1:  # 10% chance to add AC press
+                            value_list.append(ac_op)
+                            # Do not increment sequence_count for AC press
+
+                    if sequence_count >= sequence_length:
+                        break
+                elif button_choice == "EQ":
+                    value_list.append(eq_op)
+                    sequence_count += 1
+                    # Randomly add AC presses if allowed
+                    if allow_random_ac_presses:
+                        if random.random() < 0.1:  # 10% chance to add AC press
+                            value_list.append(ac_op)
+                            # Do not increment sequence_count for AC press
+
+                    if sequence_count >= sequence_length:
+                        break
+            else:
+                raise ValueError(f"Unknown test_sequence_type: {test_sequence_type}")
+    return value_list
+
 @cocotb.test(skip=os.environ.get("GATES")=="yes")
 @cocotb.parametrize(
     test_2s_complement=[False, True],  # Whether to test in 2's complement mode
@@ -784,7 +1021,7 @@ def test_sequence_generator(include_neg_button, test_sequence_type, num_samples,
         # SEQUENCE_AFTER_EQ: AC -> NUM -> OP -> NUM -> = -> OP -> NUM -> = ... -> AC
         # RANDOM_BUTTON_PRESS: literally press ANY button randomly 
         # In any sequence, AC is only pressed at end. 
-    sequence_length=[5, 10, 20, 50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
+    sequence_length=[5, 50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
     allow_random_ac_presses=[False, True],  # If True, allow random AC presses in sequences
     input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
