@@ -107,7 +107,7 @@ module alu #(
   assign divides = (adder_carry_out) ^ a_reg[2*DATA_WIDTH-1]; // If A - B >= 0, then A divides B
 
   // State transition
-  always_ff @(posedge clk or negedge rst_n) begin : state_transition
+  always_ff @(posedge clk) begin : state_transition
     if (!rst_n) begin
       alu_current_state <= WAIT_INPUT;
       div_result_neg_reg <= 1'b0;
@@ -443,7 +443,7 @@ module alu #(
   end
   
   // Data path operations
-  always_ff @(posedge clk or negedge rst_n) begin : a_register_block
+  always_ff @(posedge clk) begin : a_register_block
     if (!rst_n) begin
       a_reg <= '0;
     end else begin
@@ -473,7 +473,7 @@ module alu #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin : b_register_block
+  always_ff @(posedge clk) begin : b_register_block
     if (!rst_n) begin
       b_reg <= '0;
     end else begin
@@ -493,7 +493,7 @@ module alu #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin : result_register_block
+  always_ff @(posedge clk) begin : result_register_block
     if (!rst_n) begin
       result_reg <= '0;
     end else begin
@@ -566,7 +566,7 @@ module alu #(
   end
 
   // Counter for multi-cycle operations
-  always_ff @(posedge clk or negedge rst_n) begin : counter_block
+  always_ff @(posedge clk) begin : counter_block
     if (!rst_n) begin
       counter <= '0;
     end else begin

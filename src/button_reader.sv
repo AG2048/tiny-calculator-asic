@@ -83,7 +83,7 @@ module button_reader (
 
   // 2-bit counter to scan the 4 word lines in sequence
   // Always counting up
-  always_ff @(posedge clk or negedge rst_n) begin : word_line_counter
+  always_ff @(posedge clk) begin : word_line_counter
     if (!rst_n) begin
       counter <= 2'b00;
     end else begin
@@ -106,7 +106,7 @@ module button_reader (
   // (A button press occurred in previous cycle if value is 1 at counter == 0)
   // This value is forced to 0 when data is valid
   logic button_pressed_reg;
-  always_ff @(posedge clk or negedge rst_n) begin : button_pressed_register
+  always_ff @(posedge clk) begin : button_pressed_register
     if (!rst_n) begin
       button_pressed_reg <= 1'b0;
     end else begin
@@ -126,7 +126,7 @@ module button_reader (
   // This value is forced to 0 when data is valid
   // This register is an indicator that there's currently a valid button value stored in the output register
   logic prev_button_pressed_reg;
-  always_ff @(posedge clk or negedge rst_n) begin : prev_button_pressed_register
+  always_ff @(posedge clk) begin : prev_button_pressed_register
     if (!rst_n) begin
       prev_button_pressed_reg <= 1'b0;
     end else begin
@@ -150,7 +150,7 @@ module button_reader (
 
   // Output data register
   logic [4:0] o_data_reg;
-  always_ff @(posedge clk or negedge rst_n) begin : output_data_register
+  always_ff @(posedge clk) begin : output_data_register
     if (!rst_n) begin
       o_data_reg <= 5'b00000;
     end else begin
@@ -168,7 +168,7 @@ module button_reader (
 
   // Data valid output register
   logic o_valid_reg;
-  always_ff @(posedge clk or negedge rst_n) begin : output_valid_register
+  always_ff @(posedge clk) begin : output_valid_register
     if (!rst_n) begin
       o_valid_reg <= 1'b0;
     end else begin

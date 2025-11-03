@@ -167,7 +167,7 @@ module output_driver #(
   assign o_sr_data = output_data; // Currently 1 means segment on, and 0 means segment off. Order from MSB to LSB, a,b,c,d,e,f,g
 
 
-  always_ff @(posedge clk or negedge rst_n) begin : fsm_state_register
+  always_ff @(posedge clk) begin : fsm_state_register
     if (!rst_n) begin
       od_current_state <= DISPLAY_VALUE; // Display the zeros on reset
     end else begin
@@ -254,7 +254,7 @@ module output_driver #(
   end
 
   // Registers
-  always_ff @(posedge clk or negedge rst_n) begin : data_registers
+  always_ff @(posedge clk) begin : data_registers
     if (!rst_n) begin
       data_reg <= '0;
       data_is_neg_reg <= 1'b0;
@@ -267,7 +267,7 @@ module output_driver #(
   end
 
   // Counters
-  always_ff @(posedge clk or negedge rst_n) begin : counters_ff
+  always_ff @(posedge clk) begin : counters_ff
     if (!rst_n || reset_counters) begin
       display_counter <= NUM_7_SEG_DISPLAYS - 1;
       per_display_counter <= 6; // Start from segment 'a'

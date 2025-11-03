@@ -140,7 +140,7 @@ module calculator_core #(
   );
 
   // State transition
-  always_ff @(posedge clk or negedge rst_n) begin : fsm_state_register
+  always_ff @(posedge clk) begin : fsm_state_register
     if (!rst_n) begin
       core_current_state <= AC;
     end else begin
@@ -1010,7 +1010,7 @@ module calculator_core #(
   end
 
   // Data path blocks
-  always_ff @(posedge clk or negedge rst_n) begin : a_register_block
+  always_ff @(posedge clk) begin : a_register_block
     if (!rst_n) begin
       reg_a <= '0;
     end else begin
@@ -1033,7 +1033,7 @@ module calculator_core #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin : b_register_block
+  always_ff @(posedge clk) begin : b_register_block
     if (!rst_n) begin
       reg_b <= '0;
     end else begin
@@ -1056,7 +1056,7 @@ module calculator_core #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin : temp_input_register_block
+  always_ff @(posedge clk) begin : temp_input_register_block
     if (!rst_n) begin
       temp_input <= '0;
     end else begin
@@ -1066,7 +1066,7 @@ module calculator_core #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin : current_op_register_block
+  always_ff @(posedge clk) begin : current_op_register_block
     if (!rst_n) begin
       current_op <= 2'b00;
     end else begin
@@ -1081,7 +1081,7 @@ module calculator_core #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin : reg_a_input_neg_register_block
+  always_ff @(posedge clk) begin : reg_a_input_neg_register_block
     if (!rst_n) begin
       reg_a_input_neg <= '0;
     end else begin
@@ -1095,7 +1095,7 @@ module calculator_core #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin : reg_b_input_neg_register_block
+  always_ff @(posedge clk) begin : reg_b_input_neg_register_block
     if (!rst_n) begin
       reg_b_input_neg <= '0;
     end else begin
