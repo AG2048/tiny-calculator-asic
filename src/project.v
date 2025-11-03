@@ -62,33 +62,37 @@ module tt_um_ag2048_calculator (
 
   wire                  o_sr_data;
   wire                  o_sr_clk;
+  wire                  o_sr_latch;
   wire                  o_sr_oe_n;
 
   // Assign uio pins direction and unused pins
-  assign uio_oe       = 8'b00111100;          // uio[2:5] are outputs, others are inputs
-  assign uio_out[7:6] = 2'b00;                // Unused output pins
-  assign uio_out[1:0] = 2'b00;                // Unused output pins
-  wire   _unused      = &{uio_in[5:2], ena, 1'b0}; // Prevent unused input warnings
+  assign uio_oe             = 8'b00111100;          // uio[2:5] are outputs, others are inputs
+  assign uio_out[1:0]       = 2'b00;                // Unused output pins
+  assign uio_out[2]         = o_add_state_display;
+  assign uio_out[3]         = o_sub_state_display;
+  assign uio_out[4]         = o_mul_state_display;
+  assign uio_out[5]         = o_div_state_display;
+  assign uio_out[7:6]       = 2'b00;                // Unused output pins
+
+  assign i_ac_pin           = uio_in[0];
+  assign i_eq_pin           = uio_in[1];
+  assign i_2s_comp_mode_pin = uio_in[6];
+  assign i_neg_pin          = uio_in[7];
+  wire   _unused            = &{uio_in[5:2], ena, 1'b0}; // Prevent unused input warnings
+
   // Assign signals to Output Pins
   assign uo_out[3:0] = o_word_lines;
-  assign uio_out[2]  = o_add_state_display;
-  assign uio_out[3]  = o_sub_state_display;
-  assign uio_out[4]  = o_mul_state_display;
-  assign uio_out[5]  = o_div_state_display;
   assign uo_out[4]   = o_sr_data;
-  assign uo_out[5]   = o_sr_clk; // Technically this can be removed if we use a shift register that have a latch option, so just keep flushing and only "latch" when needed. TODO: make space for hex/dec switch?
-  assign uo_out[6]   = o_sr_oe_n; // TODO: or we can just only clk shift data out with no latch?
-  assign uo_out[7]   = alu_output_error; // Indicate error on dedicated output pin TODO: can be removed? make space for Common Anode / Common Cathode switch? Output Hex/Dec switch?
+  assign uo_out[5]   = o_sr_clk;
+  assign uo_out[6]   = o_sr_latch;
+  assign uo_out[7]   = o_sr_oe_n;
+  
   // Assign Input Pins to signals
   assign i_bit_lines        = ui_in[3:0];
   assign i_add_pin          = ui_in[4];
   assign i_sub_pin          = ui_in[5];
   assign i_mul_pin          = ui_in[6];
   assign i_div_pin          = ui_in[7];
-  assign i_ac_pin           = uio_in[0];
-  assign i_eq_pin           = uio_in[1];
-  assign i_2s_comp_mode_pin = uio_in[6];
-  assign i_neg_pin          = uio_in[7];
 
   // Instantiate the button_reader module
   button_reader br_inst (
@@ -183,6 +187,7 @@ module tt_um_ag2048_calculator (
 
       .o_sr_data     (o_sr_data),
       .o_sr_clk      (o_sr_clk),
+      .o_sr_latch    (o_sr_latch),
       .o_sr_oe_n     (o_sr_oe_n)
   );
 
