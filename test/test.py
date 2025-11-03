@@ -84,7 +84,7 @@ class ButtonValueReader:
 
 
 class ButtonPressGenerator:
-    def __init__(self, clk, o_word_lines, i_bit_lines, i_ac_pin, i_add_pin, i_sub_pin, i_mul_pin, i_div_pin, i_eq_pin, i_neg_pin, o_valid=None, button_press_mode="SINGLE_PRESS", input_order="IN_ORDER", num_samples=100, button_hold_random_min_cyc=5, button_hold_random_max_cyc=200, inter_press_gap_random_min_cyc=5, inter_press_gap_random_max_cyc=200, no_valid_delay_cyc=100):
+    def __init__(self, clk, o_word_lines, i_bit_lines, i_ac_pin, i_add_pin, i_sub_pin, i_mul_pin, i_div_pin, i_eq_pin, i_neg_pin, o_valid=None, button_press_mode="SINGLE_PRESS", input_order="IN_ORDER", num_samples=100, button_hold_random_min_cyc=5, button_hold_random_max_cyc=200, inter_press_gap_random_min_cyc=5, inter_press_gap_random_max_cyc=200, no_valid_delay_cyc=10):
         self.clk = clk
         self.o_word_lines = o_word_lines
         self.i_bit_lines = i_bit_lines
@@ -163,7 +163,7 @@ class ButtonPressGenerator:
                 else:
                     valid_low_cycles = 0
         else:
-            await ClockCycles(self.clk, self.no_valid_delay_cyc)  # Wait 100 cycles if no o_valid provided
+            await ClockCycles(self.clk, self.no_valid_delay_cyc)  # Wait 10 cycles if no o_valid provided
         # Write to i_bit_lines based on numbers_pressed_cycles_left
         while True:
             await FallingEdge(self.clk)
@@ -530,9 +530,9 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
 @cocotb.test(skip=os.environ.get("GATES")=="yes")
 @cocotb.parametrize(
     valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
-    test_2s_complement=[True, False],
+    test_neg_displays=[False, True],
     input_order=["IN_ORDER", "RANDOM_ORDER"],
-    allow_error=[False, True], # Allow i_error
+    allow_error=[False, True], # Allow i_error = 1 with 10% chance
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))]
 )
@@ -776,6 +776,7 @@ def test_sequence_generator(include_neg_button, test_sequence_type, num_samples,
 @cocotb.test(skip=os.environ.get("GATES")=="yes")
 @cocotb.parametrize(
     test_2s_complement=[False, True],  # Whether to test in 2's complement mode
+    test_input_with_overflow=[False, True],  # Whether to include inputs that cause overflow (outside of valid range depending on 2's complement setting)
     include_neg_button=["NO_NEGATIVE_INPUT", "NEGATIVE_INPUT_AFTER_VAL_INPUT", "NEGATIVE_INPUT_IN_BETWEEN_VAL_INPUT"],  # If False, never press the neg button
     test_sequence_type=["ONE", "SEQUENCE_BY_OP", "SEQUENCE_AFTER_EQ", "RANDOM_BUTTON_PRESS"],  
         # ONE: always: AC -> Input number -> OP -> Input number -> = -> AC
@@ -798,13 +799,33 @@ async def test_core(dut, test_2s_complement, include_neg_button, test_individual
 
 @cocotb.test()
 @cocotb.parametrize(
+    # Core settings
+    test_2s_complement=[False, True],  # Whether to test in 2's complement mode
+    test_input_with_overflow=[False, True],  # Whether to include inputs that cause overflow (outside of valid range depending on 2's complement setting)
+    include_neg_button=["NO_NEGATIVE_INPUT", "NEGATIVE_INPUT_AFTER_VAL_INPUT", "NEGATIVE_INPUT_IN_BETWEEN_VAL_INPUT"],  # If False, never press the neg button
+    test_sequence_type=["ONE", "SEQUENCE_BY_OP", "SEQUENCE_AFTER_EQ", "RANDOM_BUTTON_PRESS"],  
+        # ONE: always: AC -> Input number -> OP -> Input number -> = -> AC
+        # SEQUENCE_BY_OP: AC -> NUM -> OP -> NUM -> OP -> NUM ... -> ... -> AC
+        # SEQUENCE_AFTER_EQ: AC -> NUM -> OP -> NUM -> = -> OP -> NUM -> = ... -> AC
+        # RANDOM_BUTTON_PRESS: literally press ANY button randomly 
+        # In any sequence, AC is only pressed at end. 
+    sequence_length=[5, 10, 20, 50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
+    allow_random_ac_presses=[False, True],  # If True, allow random AC presses in sequences
+
+    # Input settings
     button_press_mode=["SINGLE_PRESS", "MULTI_PRESS", "MULTI_HOLD_LATE_RELEASE", "SHORTEST_SINGLE_PRESS"],
-    input_order=["IN_ORDER", "RANDOM_ORDER"],
+    button_hold_random_min_cyc=[5],
+    button_hold_random_max_cyc=[50],
+    inter_press_gap_random_min_cyc=[5],
+    inter_press_gap_random_max_cyc=[50],
+    ready_delay_random_min_cyc=[1],
+    ready_delay_random_max_cyc=[10],
+    button_press_no_valid_delay_cyc=[10], # Since we won't read o_valid in this test, just set to 10 cycles
+
+    # Test settings
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))]
 )
-async def test_top(dut, button_press_mode, input_order, num_samples):
-    cocotb.log.info(f"Starting top test with button_press_mode={button_press_mode}, input_order={input_order}, num_samples={num_samples}")
-    # This test should generate random input sequences, and calculate expected output sequences on 7-seg display
-    # Just declare the test to fail
+async def test_top(dut, test_2s_complement, include_neg_button, test_sequence_type, sequence_length, allow_random_ac_presses, button_press_mode, button_hold_random_min_cyc, button_hold_random_max_cyc, inter_press_gap_random_min_cyc, inter_press_gap_random_max_cyc, ready_delay_random_min_cyc, ready_delay_random_max_cyc, button_press_no_valid_delay_cyc, num_samples, timeout_ms):
+    cocotb.log.info(f"Starting Top test with test_2s_complement={test_2s_complement}, include_neg_button={include_neg_button}, test_sequence_type={test_sequence_type}, allow_random_ac_presses={allow_random_ac_presses}, button_press_mode={button_press_mode}, num_samples={num_samples}")
     assert 1==2, "Not implemented yet."
