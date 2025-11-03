@@ -157,6 +157,7 @@ module output_driver #(
   logic output_enable_n; // o_sr_oe_n output enable (active low)
   logic output_data; // o_sr_data output data
   logic showing_error; // Indicates if currently displaying error
+  logic input_ready;
 
   logic reset_counters;
 
@@ -165,7 +166,7 @@ module output_driver #(
   assign o_sr_latch = latch_enable ? ~clk : 1'b0; // Latch once on falling edge of clock (ensure last bit is shifted in)
   assign o_sr_oe_n = output_enable_n; // Latch once on rising edge
   assign o_sr_data = output_data; // Currently 1 means segment on, and 0 means segment off. Order from MSB to LSB, a,b,c,d,e,f,g
-
+  assign o_ready = input_ready;
 
   always_ff @(posedge clk) begin : fsm_state_register
     if (!rst_n) begin
@@ -217,6 +218,7 @@ module output_driver #(
           output_enable_n = 1'b0;
           reset_counters  = 1'b1;
           showing_error   = 1'b0;
+          input_ready     = 1'b1;
         end
       DISPLAY_VALUE:
         begin
@@ -225,6 +227,7 @@ module output_driver #(
           output_enable_n = 1'b1;
           reset_counters  = 1'b0;
           showing_error   = 1'b0;
+          input_ready     = 1'b0;
         end
       DISPLAY_ERROR:
         begin
@@ -233,6 +236,7 @@ module output_driver #(
           output_enable_n = 1'b1;
           reset_counters  = 1'b0;
           showing_error   = 1'b1;
+          input_ready     = 1'b0;
         end
       LATCH_RESULT:
         begin
@@ -241,6 +245,7 @@ module output_driver #(
           output_enable_n = 1'b0;
           reset_counters  = 1'b0;
           showing_error   = 1'b0;
+          input_ready     = 1'b0;
         end
       default:
         begin
@@ -249,6 +254,7 @@ module output_driver #(
           output_enable_n = 1'b1;
           reset_counters  = 1'b1;
           showing_error   = 1'b0;
+          input_ready     = 1'b1;
         end
     endcase
   end
