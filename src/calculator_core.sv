@@ -74,7 +74,7 @@ module calculator_core #(
     ERROR_WAIT                             // In error, wait for AC
   } fsm_state_t;
 
-  fsm_state_t current_state;
+  fsm_state_t core_current_state;
 
   // Registers
   logic [DATA_WIDTH-1:0] reg_a, reg_b;    // Main registers A and B to hold input values and ALU results
@@ -142,19 +142,19 @@ module calculator_core #(
   // State transition
   always_ff @(posedge clk or negedge rst_n) begin : fsm_state_register
     if (!rst_n) begin
-      current_state <= AC;
+      core_current_state <= AC;
     end else begin
-      case (current_state)
+      case (core_current_state)
         AC:
           begin
             // Pressed AC from any WAIT_INPUT state: clear all registers and flags, go to DISPLAY_AFTER_AC
-            current_state <= DISPLAY_AFTER_AC;
+            core_current_state <= DISPLAY_AFTER_AC;
           end
         DISPLAY_AFTER_AC:
           begin
             // Display cleared reg A value (0), and return to WAIT_FIRST_INPUT
             if (o_display_valid && i_display_ready) begin
-              current_state <= WAIT_FIRST_INPUT;
+              core_current_state <= WAIT_FIRST_INPUT;
             end
           end
         WAIT_FIRST_INPUT:
@@ -163,17 +163,17 @@ module calculator_core #(
             if (load_temp) begin
               if (i_button_data[4] == 1'b0) begin
                 // Input is NUMBER
-                current_state <= FIRST_INPUT_NUMBER;
+                core_current_state <= FIRST_INPUT_NUMBER;
               end else if (i_button_data[2] == 1'b0) begin
                 // Input is OP
-                current_state <= FIRST_INPUT_OP;
+                core_current_state <= FIRST_INPUT_OP;
               end else begin
                 if (i_button_data[1:0] == 2'b01) begin
                   // AC
-                  current_state <= AC;
+                  core_current_state <= AC;
                 end else if (i_button_data[1:0] == 2'b10) begin
                   // Neg
-                  current_state <= FIRST_INPUT_NEG;
+                  core_current_state <= FIRST_INPUT_NEG;
                 end
               end
             end
@@ -181,24 +181,24 @@ module calculator_core #(
         FIRST_INPUT_NUMBER:
           begin
             // PRESSED Number: Shift reg A and load number input (can be signed), DISPLAY_AFTER_FIRST_INPUT next
-            current_state <= DISPLAY_AFTER_FIRST_INPUT;
+            core_current_state <= DISPLAY_AFTER_FIRST_INPUT;
           end
         DISPLAY_AFTER_FIRST_INPUT:
           begin
             // Display updated reg A value and return to WAIT_FIRST_INPUT
             if (o_display_valid && i_display_ready) begin
-              current_state <= WAIT_FIRST_INPUT;
+              core_current_state <= WAIT_FIRST_INPUT;
             end
           end
         FIRST_INPUT_OP:
           begin
             // PRESSED Op: (both from WAIT_FIRST_INPUT and WAIT_SECOND_INPUT_BEFORE_VALUE): Load operation, display current operation state (and for any subsequent FSM state), WAIT_SECOND_INPUT_BEFORE_VALUE next
-            current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
+            core_current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
           end
         FIRST_INPUT_NEG:
           begin
             // PRESSED (-): negate reg A value and toggle reg_a_input_neg flag (this flag should be reset for AC, EQ), WAIT_FIRST_INPUT next
-            current_state <= DISPLAY_AFTER_FIRST_INPUT;
+            core_current_state <= DISPLAY_AFTER_FIRST_INPUT;
           end
         WAIT_SECOND_INPUT_BEFORE_VALUE:
           begin
@@ -206,20 +206,20 @@ module calculator_core #(
             if (load_temp) begin
               if (i_button_data[4] == 1'b0) begin
                 // Input is NUMBER
-                current_state <= SECOND_INPUT_NUMBER;
+                core_current_state <= SECOND_INPUT_NUMBER;
               end else if (i_button_data[2] == 1'b0) begin
                 // Input is OP
-                current_state <= FIRST_INPUT_OP;
+                core_current_state <= FIRST_INPUT_OP;
               end else begin
                 if (i_button_data[1:0] == 2'b01) begin
                   // AC
-                  current_state <= AC;
+                  core_current_state <= AC;
                 end else if (i_button_data[1:0] == 2'b10) begin
                   // Neg
-                  current_state <= SECOND_INPUT_NEG_BEFORE_VALUE;
+                  core_current_state <= SECOND_INPUT_NEG_BEFORE_VALUE;
                 end else if (i_button_data[1:0] == 2'b00) begin
                   // Eq
-                  current_state <= COPY_A_TO_B;
+                  core_current_state <= COPY_A_TO_B;
                 end
               end
             end
@@ -227,23 +227,23 @@ module calculator_core #(
         SECOND_INPUT_NEG_BEFORE_VALUE:
           begin
             // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), WAIT_SECOND_INPUT_BEFORE_VALUE next (this action alone does not constitute a value input)
-            current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
+            core_current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
           end
         COPY_A_TO_B:
           begin
             // PRESSED Eq: copy reg A to reg B, perform A = A op A, EQUAL_AFTER_SECOND_VALUE next
-            current_state <= EQUAL_AFTER_SECOND_VALUE;
+            core_current_state <= EQUAL_AFTER_SECOND_VALUE;
           end
         SECOND_INPUT_NUMBER:
           begin
             // PRESSED Number: Shift reg B and load number input (can be signed), DISPLAY_AFTER_SECOND_INPUT next
-            current_state <= DISPLAY_AFTER_SECOND_INPUT;
+            core_current_state <= DISPLAY_AFTER_SECOND_INPUT;
           end
         DISPLAY_AFTER_SECOND_INPUT:
           begin
             // Display updated reg B value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
             if (o_display_valid && i_display_ready) begin
-              current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
+              core_current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
             end
           end
         WAIT_SECOND_INPUT_AFTER_VALUE:
@@ -252,20 +252,20 @@ module calculator_core #(
             if (load_temp) begin
               if (i_button_data[4] == 1'b0) begin
                 // Input is NUMBER
-                current_state <= SECOND_INPUT_NUMBER;
+                core_current_state <= SECOND_INPUT_NUMBER;
               end else if (i_button_data[2] == 1'b0) begin
                 // Input is OP
-                current_state <= SECOND_INPUT_OP_CALCULATE;
+                core_current_state <= SECOND_INPUT_OP_CALCULATE;
               end else begin
                 if (i_button_data[1:0] == 2'b01) begin
                   // AC
-                  current_state <= AC;
+                  core_current_state <= AC;
                 end else if (i_button_data[1:0] == 2'b10) begin
                   // Neg
-                  current_state <= SECOND_INPUT_NEG_AFTER_VALUE;
+                  core_current_state <= SECOND_INPUT_NEG_AFTER_VALUE;
                 end else if (i_button_data[1:0] == 2'b00) begin
                   // Eq
-                  current_state <= EQUAL_AFTER_SECOND_VALUE;
+                  core_current_state <= EQUAL_AFTER_SECOND_VALUE;
                 end
               end
             end
@@ -273,50 +273,50 @@ module calculator_core #(
         SECOND_INPUT_NEG_AFTER_VALUE:
           begin
             // PRESSED (-): negate reg B value and toggle reg_b_input_neg flag (this flag should be reset for AC, EQ, Second OP), DISPLAY_AFTER_SECOND_INPUT next
-            current_state <= DISPLAY_AFTER_SECOND_INPUT;
+            core_current_state <= DISPLAY_AFTER_SECOND_INPUT;
           end
         SECOND_INPUT_OP_CALCULATE:
           begin
             // PRESSED Op: A = A op B, and load in new operation while ALU gets old operation, SECOND_INPUT_OP_CALCULATE_WAIT_RESULT next
             if (o_alu_input_valid && i_alu_input_ready) begin
-              current_state <= SECOND_INPUT_OP_CALCULATE_WAIT_RESULT;
+              core_current_state <= SECOND_INPUT_OP_CALCULATE_WAIT_RESULT;
             end
           end
         SECOND_INPUT_OP_CALCULATE_WAIT_RESULT:
           begin
             // Wait for ALU result to be valid after SECOND_INPUT_OP_CALCULATE, DISPLAY_AFTER_SECOND_OP next
             if (reading_result) begin
-              if (i_alu_error) current_state <= DISPLAY_ERROR;
-              else             current_state <= DISPLAY_AFTER_SECOND_OP;
+              if (i_alu_error) core_current_state <= DISPLAY_ERROR;
+              else             core_current_state <= DISPLAY_AFTER_SECOND_OP;
             end
           end
         DISPLAY_AFTER_SECOND_OP:
           begin
             // Display updated reg A value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
             if (o_display_valid && i_display_ready) begin
-              current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
+              core_current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
             end
           end
         EQUAL_AFTER_SECOND_VALUE:
           begin
             // PRESSED Eq: A = A op B, EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT next
             if (o_alu_input_valid && i_alu_input_ready) begin
-              current_state <= EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT;
+              core_current_state <= EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT;
             end
           end
         EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT:
           begin
             // Wait for ALU result to be valid after EQUAL_AFTER_SECOND_VALUE, DISPLAY_AFTER_EQUAL next
             if (reading_result) begin
-              if (i_alu_error) current_state <= DISPLAY_ERROR;
-              else             current_state <= DISPLAY_AFTER_EQUAL;
+              if (i_alu_error) core_current_state <= DISPLAY_ERROR;
+              else             core_current_state <= DISPLAY_AFTER_EQUAL;
             end
           end
         DISPLAY_AFTER_EQUAL:
           begin
             // Display updated reg A value and move to WAIT_INPUT_AFTER_EQUAL
             if (o_display_valid && i_display_ready) begin
-              current_state <= WAIT_INPUT_AFTER_EQUAL;
+              core_current_state <= WAIT_INPUT_AFTER_EQUAL;
             end
           end
         WAIT_INPUT_AFTER_EQUAL:
@@ -325,20 +325,20 @@ module calculator_core #(
             if (load_temp) begin
               if (i_button_data[4] == 1'b0) begin
                 // Input is NUMBER
-                current_state <= CLEAR_AFTER_EQUAL;
+                core_current_state <= CLEAR_AFTER_EQUAL;
               end else if (i_button_data[2] == 1'b0) begin
                 // Input is OP
-                current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
+                core_current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
               end else begin
                 if (i_button_data[1:0] == 2'b01) begin
                   // AC
-                  current_state <= AC;
+                  core_current_state <= AC;
                 end else if (i_button_data[1:0] == 2'b10) begin
                   // Neg
-                  current_state <= INPUT_NEG_AFTER_EQUAL;
+                  core_current_state <= INPUT_NEG_AFTER_EQUAL;
                 end else if (i_button_data[1:0] == 2'b00) begin
                   // Eq
-                  current_state <= EQUAL_AFTER_SECOND_VALUE;
+                  core_current_state <= EQUAL_AFTER_SECOND_VALUE;
                 end
               end
             end
@@ -346,18 +346,18 @@ module calculator_core #(
         INPUT_NEG_AFTER_EQUAL:
           begin
             // PRESSED (-): negate reg A value (no need for flag since no input can occur without erasing reg A), DISPLAY_AFTER_EQUAL next
-            current_state <= DISPLAY_AFTER_EQUAL;
+            core_current_state <= DISPLAY_AFTER_EQUAL;
           end
         CLEAR_AFTER_EQUAL:
           begin
             // PRESSED Number: after EQUAL, clear and load new number into temp reg (clear all neg flags), FIRST_INPUT_NUMBER next
-            current_state <= FIRST_INPUT_NUMBER;
+            core_current_state <= FIRST_INPUT_NUMBER;
           end
         DISPLAY_ERROR:
           begin
             // If the ALU result ever reads an error from SECOND_INPUT_OP_CALCULATE or EQUAL_AFTER_SECOND_VALUE, go to this state and wait for AC button press
             if (o_display_valid && i_display_ready) begin
-              current_state <= ERROR_WAIT;
+              core_current_state <= ERROR_WAIT;
             end
           end
         ERROR_WAIT:
@@ -366,14 +366,14 @@ module calculator_core #(
             if (load_temp) begin
               if (i_button_data[2:0] == 3'b001) begin
                 // AC
-                current_state <= AC;
+                core_current_state <= AC;
               end
             end
           end
         default:
           begin
             // This should not occur
-            current_state <= AC;
+            core_current_state <= AC;
           end
       endcase
     end
@@ -381,7 +381,7 @@ module calculator_core #(
 
   // Control signal combinational logic
   always_comb begin : fsm_control_signals_comb
-    case (current_state)
+    case (core_current_state)
       AC:
         begin
           // Pressed AC from any WAIT_INPUT state: clear all registers and flags, go to DISPLAY_AFTER_AC

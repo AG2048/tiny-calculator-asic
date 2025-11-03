@@ -69,7 +69,7 @@ module output_driver #(
     LATCH_RESULT
   } output_driver_state_t;
 
-  output_driver_state_t current_state;
+  output_driver_state_t od_current_state;
 
   // Counters
   logic [DISPLAYS_COUNTER_WIDTH-1:0] display_counter;
@@ -169,39 +169,39 @@ module output_driver #(
 
   always_ff @(posedge clk or negedge rst_n) begin : fsm_state_register
     if (!rst_n) begin
-      current_state <= DISPLAY_VALUE; // Display the zeros on reset
+      od_current_state <= DISPLAY_VALUE; // Display the zeros on reset
     end else begin
-      case (current_state)
+      case (od_current_state)
         WAIT_INPUT: 
           begin
             if (i_valid && o_ready) begin
                 // On valid input, move to output state
-                current_state <= i_error ? DISPLAY_ERROR : DISPLAY_VALUE;
+                od_current_state <= i_error ? DISPLAY_ERROR : DISPLAY_VALUE;
             end
           end
         DISPLAY_VALUE: 
           begin
             // After displaying data, go to latch result
             if (display_counter == 0 && per_display_counter == 0) begin
-              current_state <= LATCH_RESULT;
+              od_current_state <= LATCH_RESULT;
             end
           end
         DISPLAY_ERROR: 
           begin
             // After displaying data, go to latch result
             if (display_counter == 0 && per_display_counter == 0) begin
-              current_state <= LATCH_RESULT;
+              od_current_state <= LATCH_RESULT;
             end
           end
         LATCH_RESULT: 
           begin
             // Return to wait input after latching result
-            current_state <= WAIT_INPUT;
+            od_current_state <= WAIT_INPUT;
           end
         default: 
           begin
             // This should never happen, go to safe state
-            current_state <= WAIT_INPUT;
+            od_current_state <= WAIT_INPUT;
           end
       endcase
     end
@@ -209,7 +209,7 @@ module output_driver #(
 
   // Control signal comb logic
   always_comb begin : fsm_control_signals_comb
-    case (current_state)
+    case (od_current_state)
       WAIT_INPUT:
         begin
           sr_clk_enable   = 1'b0;

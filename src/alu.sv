@@ -66,7 +66,7 @@ module alu #(
     OUTPUT_ERROR
   } alu_state_t;
 
-  alu_state_t current_state;
+  alu_state_t alu_current_state;
 
   // Registers
   logic [DATA_WIDTH-1:0] result_reg;
@@ -109,10 +109,10 @@ module alu #(
   // State transition
   always_ff @(posedge clk or negedge rst_n) begin : state_transition
     if (!rst_n) begin
-      current_state <= WAIT_INPUT;
+      alu_current_state <= WAIT_INPUT;
       div_result_neg_reg <= 1'b0;
     end else begin
-      case (current_state)
+      case (alu_current_state)
         WAIT_INPUT:
           begin
             if (i_alu_input_valid && o_alu_input_ready) begin
@@ -120,83 +120,83 @@ module alu #(
               // Determine next state based on operation
               case (i_alu_input_op)
                 // Proceed to operation states
-                2'b00: current_state <= ADD_OP;
-                2'b01: current_state <= SUB_OP;
-                2'b10: current_state <= MUL_INIT;
+                2'b00: alu_current_state <= ADD_OP;
+                2'b01: alu_current_state <= SUB_OP;
+                2'b10: alu_current_state <= MUL_INIT;
                 2'b11: 
                   begin
                     // Div
-                    if (i_alu_input_b == 0) current_state <= OUTPUT_ERROR; // Div by zero error
+                    if (i_alu_input_b == 0) alu_current_state <= OUTPUT_ERROR; // Div by zero error
                     else begin
                       // Determine if need to flip signs, never flip signs if inputs are unsigned
                       div_result_neg_reg <= i_alu_input_signed && 
                                             (i_alu_input_a[DATA_WIDTH-1] ^ i_alu_input_b[DATA_WIDTH-1]);
                       if (i_alu_input_signed) begin
-                        current_state <= DIV_FLIP_A; // Flip input signs if we read signed values
+                        alu_current_state <= DIV_FLIP_A; // Flip input signs if we read signed values
                       end else begin
-                        current_state <= DIV_INIT; // No sign flip needed
+                        alu_current_state <= DIV_INIT; // No sign flip needed
                       end
                     end
                   end
-                default: current_state <= WAIT_INPUT; // Should not happen
+                default: alu_current_state <= WAIT_INPUT; // Should not happen
               endcase
             end
           end
         ADD_OP:
           begin
-            current_state <= OUTPUT_RESULT; // 1 cycle op
+            alu_current_state <= OUTPUT_RESULT; // 1 cycle op
           end
         SUB_OP:
           begin
-            current_state <= OUTPUT_RESULT; // 1 cycle op
+            alu_current_state <= OUTPUT_RESULT; // 1 cycle op
           end
         MUL_INIT:
           begin
-            current_state <= MUL_OP; // Start MUL operation, set up counter
+            alu_current_state <= MUL_OP; // Start MUL operation, set up counter
           end
         MUL_OP:
           begin
             if (counter == 0) begin
-              current_state <= OUTPUT_RESULT; // MUL done (this ensures operation runs DATA_WIDTH cycles)
+              alu_current_state <= OUTPUT_RESULT; // MUL done (this ensures operation runs DATA_WIDTH cycles)
             end
           end
         DIV_FLIP_A:
           begin
-            current_state <= DIV_FLIP_B; // Proceed to flip B
+            alu_current_state <= DIV_FLIP_B; // Proceed to flip B
           end
         DIV_FLIP_B:
           begin
-            current_state <= DIV_INIT; // Proceed to init
+            alu_current_state <= DIV_INIT; // Proceed to init
           end
         DIV_INIT:
           begin
-            current_state <= DIV_OP; // Start DIV operation, set up counter
+            alu_current_state <= DIV_OP; // Start DIV operation, set up counter
           end
         DIV_OP:
           begin
             if (counter == 0) begin
-              current_state <= DIV_POST; // DIV done (this ensures operation runs DATA_WIDTH cycles), and sign-flip if needed
+              alu_current_state <= DIV_POST; // DIV done (this ensures operation runs DATA_WIDTH cycles), and sign-flip if needed
             end
           end
         DIV_POST:
           begin
-            current_state <= OUTPUT_RESULT; // Proceed to output result
+            alu_current_state <= OUTPUT_RESULT; // Proceed to output result
           end
         OUTPUT_RESULT:
           begin
             if (i_alu_result_ready && o_alu_result_valid) begin
-              current_state <= WAIT_INPUT; // Go back to wait for new input
+              alu_current_state <= WAIT_INPUT; // Go back to wait for new input
             end
           end
         OUTPUT_ERROR:
           begin
             if (i_alu_result_ready && o_alu_result_valid) begin
-              current_state <= WAIT_INPUT; // Go back to wait for new input
+              alu_current_state <= WAIT_INPUT; // Go back to wait for new input
             end
           end
         default:
           begin
-            current_state <= WAIT_INPUT;
+            alu_current_state <= WAIT_INPUT;
           end
       endcase
     end
@@ -204,7 +204,7 @@ module alu #(
 
   // Control signals generation
   always_comb begin : control_signal_assignment
-    case (current_state)
+    case (alu_current_state)
       WAIT_INPUT:
         begin
           input_ready   = 1; // Ready to accept new inputs
