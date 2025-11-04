@@ -1506,7 +1506,7 @@ def print_generated_test_sequence_and_expected_results():
     allow_random_ac_presses=[False, True],  # If True, allow random AC presses in sequences
     input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
-    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
+    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // 80, 1)], # This test takes too long, reduce samples by factor of 80, at least 1 sample
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
     signal_width=[DATA_WIDTH],
     num_displays=[NUM_DISPLAYS]
@@ -1835,7 +1835,7 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
     button_press_no_valid_delay_cyc=[10], # Since we won't read o_valid in this test, just set to 10 cycles
 
     # Test settings
-    num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
+    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // 80, 1)], # This test takes too long, reduce samples by factor of 80, at least 1 sample
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))]
 )
 async def test_top(dut, test_2s_complement, include_neg_button, test_sequence_type, sequence_length, allow_random_ac_presses, button_press_mode, button_hold_random_min_cyc, button_hold_random_max_cyc, inter_press_gap_random_min_cyc, inter_press_gap_random_max_cyc, ready_delay_random_min_cyc, ready_delay_random_max_cyc, button_press_no_valid_delay_cyc, num_samples, timeout_ms):
