@@ -583,11 +583,11 @@ module calculator_core #(
 
           load_op            = 0;
           reg_a_load         = 0;
-          reg_b_load         = 1;
+          reg_b_load         = 0;
           reg_b_load_a       = 0;
           
           reg_a_invert       = 0;
-          reg_b_invert       = 0;
+          reg_b_invert       = 1;
           
           show_current_op    = 1;
           output_a_not_b     = 0;
