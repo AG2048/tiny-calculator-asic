@@ -1613,6 +1613,9 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
                     cocotb.log.error(f"Mismatch at output {len(results)-1}: got {display_str}, expected {expected_displays[len(results)-1]}")
                 else:
                     cocotb.log.info(f"Captured output display: {display_str} matches expected.")
+                # Skip "NONE"
+                while len(results) < len(expected_displays) and expected_displays[len(results)] == "NONE":
+                    results.append("NONE")
         return results
 
     async def monitor_op_status(add_display_sig, sub_display_sig, mul_display_sig, div_display_sig, button_input_valid_sig, button_input_ready_sig, expected_op_status):
@@ -1634,7 +1637,20 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
         sample_idx = 0
         rising_edge_detected = False
         while sample_idx < len(expected_op_status) - 1: # Skip the last one, since no next input after that
+            await RisingEdge(clk)
             # Process first, then wait for next input valid & ready
+            # Set previous statuses
+            previous_add_status = current_add_status
+            previous_sub_status = current_sub_status
+            previous_mul_status = current_mul_status
+            previous_div_status = current_div_status
+            # Read current statuses
+            current_add_status = int(add_display_sig.value)
+            current_sub_status = int(sub_display_sig.value)
+            current_mul_status = int(mul_display_sig.value)
+            current_div_status = int(div_display_sig.value)
+            # Print all previous and current statuses for debugging
+            # cocotb.log.info(f"At sample {sample_idx}, Previous Op Status: ADD={previous_add_status}, SUB={previous_sub_status}, MUL={previous_mul_status}, DIV={previous_div_status} | Current Op Status: ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
             expected_status = expected_op_status[sample_idx]
             if expected_status == "NONE":
                 if current_add_status != 0 or current_sub_status != 0 or current_mul_status != 0 or current_div_status != 0:
@@ -1694,21 +1710,13 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
                 cocotb.log.error(f"Unknown expected op status: {expected_status}")
                 error_counts += 1
 
-            await RisingEdge(clk)
-            # Set previous statuses
-            previous_add_status = current_add_status
-            previous_sub_status = current_sub_status
-            previous_mul_status = current_mul_status
-            previous_div_status = current_div_status
-            # Read current statuses
-            current_add_status = int(add_display_sig.value)
-            current_sub_status = int(sub_display_sig.value)
-            current_mul_status = int(mul_display_sig.value)
-            current_div_status = int(div_display_sig.value)
-
             if button_input_valid_sig.value == 1 and button_input_ready_sig.value == 1:
                 # Print the expected vs actual op status immediately before this button press
                 cocotb.log.info(f"At sample {sample_idx}, expected op status: {expected_status}, actual ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
+                # Check if rising edge was detected for ops
+                if expected_status in ["+", "-", "*", "/"] and not rising_edge_detected:
+                    cocotb.log.error(f"At sample {sample_idx}, expected {expected_status} op status, but no rising edge detected.")
+                    error_counts += 1
                 # Move to next sample
                 sample_idx += 1
                 rising_edge_detected = False
