@@ -1172,10 +1172,10 @@ def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_
                 input_is_neg = not input_is_neg
                 if not test_2s_complement:
                     input_is_neg = False
-                    expected_displays.append("0")
+                    expected_displays.append("NONE")
                     expected_op_status.append("HOLD")
                     continue
-                expected_displays.append("0")
+                expected_displays.append("NONE")
                 expected_op_status.append("HOLD")
             elif button in operation_inputs:
                 # Change operation
