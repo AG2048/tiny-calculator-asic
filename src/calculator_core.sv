@@ -328,7 +328,7 @@ module calculator_core #(
                 core_current_state <= CLEAR_AFTER_EQUAL;
               end else if (i_button_data[2] == 1'b0) begin
                 // Input is OP
-                core_current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
+                core_current_state <= FIRST_INPUT_OP;
               end else begin
                 if (i_button_data[1:0] == 2'b01) begin
                   // AC
@@ -364,7 +364,7 @@ module calculator_core #(
           begin
             // Wait in error state until AC is pressed
             if (load_temp) begin
-              if (i_button_data[2:0] == 3'b001) begin
+              if (i_button_data[4:0] == 5'b10101) begin
                 // AC
                 core_current_state <= AC;
               end
@@ -1016,7 +1016,7 @@ module calculator_core #(
     end else begin
       if (clear_regs) begin
         reg_a <= '0;
-      end else if (reg_a_invert) begin
+      end else if (reg_a_invert && i_2s_comp_mode) begin
         reg_a <= fa_sum; // Load in inverted result
       end else if (reg_a_load) begin
         // Overflow protection for shift and add
@@ -1041,7 +1041,7 @@ module calculator_core #(
         reg_b <= '0;
       end else if (reg_b_load_a) begin
         reg_b <= reg_a;
-      end else if (reg_b_invert) begin
+      end else if (reg_b_invert && i_2s_comp_mode) begin
         reg_b <= fa_sum; // Load in inverted result
       end else if (reg_b_load) begin
         // Overflow protection for shift and add
