@@ -1161,6 +1161,7 @@ def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_
                 expected_displays.append("NONE")
                 expected_op_status.append(current_op)
             elif button == eq_input:
+                number_b = number_a  # For A OP A
                 # Calculate A OP A
                 if current_op == "+":
                     result = number_a + number_a
@@ -1286,6 +1287,8 @@ def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_
                     expected_op_status.append("NONE")
                 else:
                     status = "INPUT_B_NO_VAL"
+                    number_b = 0
+                    input_is_neg = False
                     expected_displays.append(convert_number_to_display_string(result, num_displays))
                     expected_op_status.append(current_op)
             elif button == eq_input:
