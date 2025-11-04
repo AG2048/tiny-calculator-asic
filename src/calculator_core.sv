@@ -1119,13 +1119,13 @@ module calculator_core #(
     // Determine adder inputs based on control signals
     if (reg_a_load) begin
       // Shift left reg A by 4 and +/- temp_input
-      fa_a = { reg_a[DATA_WIDTH-1:4], 4'b0 }; // TODO: if decimal input, handle by adding another smaller width adder to add (a << 3 + a << 1)
+      fa_a = { reg_a[DATA_WIDTH-4-1:0], 4'b0 }; // TODO: if decimal input, handle by adding another smaller width adder to add (a << 3 + a << 1)
       fa_b = { {(DATA_WIDTH-4){1'b0}}, temp_input};
       fa_b = reg_a_input_neg ? ~fa_b : fa_b;
       fa_carry_in = reg_a_input_neg;
     end else if (reg_b_load) begin
       // Shift left reg B by 4 and +/- temp_input
-      fa_a = { reg_b[DATA_WIDTH-1:4], 4'b0 }; // TODO: if decimal input, handle by adding another smaller width adder to add (a << 3 + a << 1)
+      fa_a = { reg_b[DATA_WIDTH-4-1:0], 4'b0 }; // TODO: if decimal input, handle by adding another smaller width adder to add (a << 3 + a << 1)
       fa_b = { {(DATA_WIDTH-4){1'b0}}, temp_input};
       fa_b = reg_b_input_neg ? ~fa_b : fa_b;
       fa_carry_in = reg_b_input_neg;
