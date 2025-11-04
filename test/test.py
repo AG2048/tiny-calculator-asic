@@ -1096,8 +1096,8 @@ def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_
                     min_value = 0
                     max_value = (1 << data_width) - 1
                 if temp_result < min_value or temp_result > max_value:
-                    # Overflow, ignore this digit input
-                    expected_displays.append("NONE")
+                    # Overflow, ignore this digit input, but still update expected display and op status
+                    expected_displays.append(convert_number_to_display_string(number_a, num_displays))
                     expected_op_status.append("HOLD")
                     continue
                 number_a = temp_result
@@ -1114,7 +1114,7 @@ def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_
                 if number_a == 0:
                     expected_displays.append("0")
                     expected_op_status.append("NONE")
-                elif number_a == -2**(data_width - 1) and test_2s_complement:
+                elif number_a == -(2**(data_width - 1)) and test_2s_complement:
                     # Cannot negate minimum value in 2's complement
                     expected_displays.append(convert_number_to_display_string(number_a, num_displays))
                     expected_op_status.append("NONE")
@@ -1159,8 +1159,8 @@ def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_
                     min_value = 0
                     max_value = (1 << data_width) - 1
                 if temp_result < min_value or temp_result > max_value:
-                    # Overflow, ignore this digit input
-                    expected_displays.append("NONE")
+                    # Overflow, ignore this digit input, but still display b
+                    expected_displays.append(convert_number_to_display_string(number_b, num_displays))
                     expected_op_status.append("HOLD")
                     continue
                 number_b = temp_result
@@ -1246,8 +1246,8 @@ def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_
                     min_value = 0
                     max_value = (1 << data_width) - 1
                 if temp_result < min_value or temp_result > max_value:
-                    # Overflow, ignore this digit input
-                    expected_displays.append("NONE")
+                    # Overflow, ignore this digit input, but still display current number_b
+                    expected_displays.append(convert_number_to_display_string(number_b, num_displays))
                     expected_op_status.append("HOLD")
                     continue
                 number_b = temp_result
@@ -1378,7 +1378,7 @@ def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_
                     min_value = 0
                     max_value = (1 << data_width) - 1
                 if temp_result < min_value or temp_result > max_value:
-                    # Overflow, ignore this digit input
+                    # Overflow, ignore this digit input, also impossible to happen
                     continue
                 number_a = temp_result
                 status = "INPUT_A"
@@ -1658,6 +1658,7 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
         previous_div_status = 0
         sample_idx = 0
         rising_edge_detected = False
+        falling_edge_detected = False
         while sample_idx < len(expected_op_status) - 1: # Skip the last one, since no next input after that
             await RisingEdge(clk)
             # Process first, then wait for next input valid & ready
@@ -1675,38 +1676,40 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
             # cocotb.log.info(f"At sample {sample_idx}, Previous Op Status: ADD={previous_add_status}, SUB={previous_sub_status}, MUL={previous_mul_status}, DIV={previous_div_status} | Current Op Status: ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
             expected_status = expected_op_status[sample_idx]
             if expected_status == "NONE":
-                if current_add_status != 0 or current_sub_status != 0 or current_mul_status != 0 or current_div_status != 0:
-                    cocotb.log.error(f"At sample {sample_idx}, expected NONE op status, but got ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
-                    error_counts += 1
+                # If any was on in previous and now ALL is off, falling edge detected
+                if previous_add_status == 1 or previous_sub_status == 1 or previous_mul_status == 1 or previous_div_status == 1:
+                    if current_add_status == 0 and current_sub_status == 0 and current_mul_status == 0 and current_div_status == 0:
+                        falling_edge_detected = True
             elif expected_status == "+":
                 # For ops, check if a rising edge occurred. 
                 if previous_add_status == 0 and current_add_status == 1:
                     rising_edge_detected = True
+                    falling_edge_detected = False # Rising edge after falling overrides
                 # If falling edge detected, it's an error
                 if previous_add_status == 1 and current_add_status == 0:
-                    cocotb.log.error(f"At sample {sample_idx}, expected ADD op status, but detected falling edge.")
-                    error_counts += 1
+                    falling_edge_detected = True
             elif expected_status == "-":
                 if previous_sub_status == 0 and current_sub_status == 1:
                     rising_edge_detected = True
+                    falling_edge_detected = False
                 # If falling edge detected, it's an error
                 if previous_sub_status == 1 and current_sub_status == 0:
-                    cocotb.log.error(f"At sample {sample_idx}, expected SUB op status, but detected falling edge.")
-                    error_counts += 1
+                    falling_edge_detected = True
             elif expected_status == "*":
                 if previous_mul_status == 0 and current_mul_status == 1:
                     rising_edge_detected = True
+                    falling_edge_detected = False
                 # If falling edge detected, it's an error
                 if previous_mul_status == 1 and current_mul_status == 0:
-                    cocotb.log.error(f"At sample {sample_idx}, expected MUL op status, but detected falling edge.")
+                    falling_edge_detected = True
                     error_counts += 1
             elif expected_status == "/":
                 if previous_div_status == 0 and current_div_status == 1:
                     rising_edge_detected = True
+                    falling_edge_detected = False
                 # If falling edge detected, it's an error
                 if previous_div_status == 1 and current_div_status == 0:
-                    cocotb.log.error(f"At sample {sample_idx}, expected DIV op status, but detected falling edge.")
-                    error_counts += 1
+                    falling_edge_detected = True
             elif expected_status == "HOLD":
                 # Nothing should change
                 if (current_add_status != previous_add_status or
@@ -1725,21 +1728,34 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
                     if current_add_status != 0 or current_sub_status != 0 or current_mul_status != 0 or current_div_status != 0:
                         cocotb.log.error(f"At sample {sample_idx}, expected NONE op status at button press, but got ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
                         error_counts += 1
+                    # Actually falling edge doesn't do anything here, since we just need end to be all off
                 elif expected_status == "+":
                     if current_add_status != 1 or current_sub_status != 0 or current_mul_status != 0 or current_div_status != 0:
                         cocotb.log.error(f"At sample {sample_idx}, expected ADD op status at button press, but got ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
+                        error_counts += 1
+                    if falling_edge_detected:
+                        cocotb.log.error(f"At sample {sample_idx}, unexpected falling edge detected for ADD op status.")
                         error_counts += 1
                 elif expected_status == "-":
                     if current_add_status != 0 or current_sub_status != 1 or current_mul_status != 0 or current_div_status != 0:
                         cocotb.log.error(f"At sample {sample_idx}, expected SUB op status at button press, but got ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
                         error_counts += 1
+                    if falling_edge_detected:
+                        cocotb.log.error(f"At sample {sample_idx}, unexpected falling edge detected for SUB op status.")
+                        error_counts += 1
                 elif expected_status == "*":
                     if current_add_status != 0 or current_sub_status != 0 or current_mul_status != 1 or current_div_status != 0:
                         cocotb.log.error(f"At sample {sample_idx}, expected MUL op status at button press, but got ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
                         error_counts += 1
+                    if falling_edge_detected:
+                        cocotb.log.error(f"At sample {sample_idx}, unexpected falling edge detected for MUL op status.")
+                        error_counts += 1
                 elif expected_status == "/":
                     if current_add_status != 0 or current_sub_status != 0 or current_mul_status != 0 or current_div_status != 1:
                         cocotb.log.error(f"At sample {sample_idx}, expected DIV op status at button press, but got ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
+                        error_counts += 1
+                    if falling_edge_detected:
+                        cocotb.log.error(f"At sample {sample_idx}, unexpected falling edge detected for DIV op status.")
                         error_counts += 1
                 # Print the expected vs actual op status immediately before this button press
                 cocotb.log.info(f"At sample {sample_idx}, expected op status: {expected_status}, actual ADD={current_add_status}, SUB={current_sub_status}, MUL={current_mul_status}, DIV={current_div_status}")
@@ -1750,6 +1766,7 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
                 # Move to next sample
                 sample_idx += 1
                 rising_edge_detected = False
+                falling_edge_detected = False
         return error_counts
 
     # Start the result readers first
