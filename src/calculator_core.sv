@@ -243,7 +243,7 @@ module calculator_core #(
           begin
             // Display updated reg B value and return to WAIT_SECOND_INPUT_BEFORE_VALUE
             if (o_display_valid && i_display_ready) begin
-              core_current_state <= WAIT_SECOND_INPUT_BEFORE_VALUE;
+              core_current_state <= WAIT_SECOND_INPUT_AFTER_VALUE;
             end
           end
         WAIT_SECOND_INPUT_AFTER_VALUE:
