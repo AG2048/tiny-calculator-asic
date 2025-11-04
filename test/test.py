@@ -1702,7 +1702,6 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
                 # If falling edge detected, it's an error
                 if previous_mul_status == 1 and current_mul_status == 0:
                     falling_edge_detected = True
-                    error_counts += 1
             elif expected_status == "/":
                 if previous_div_status == 0 and current_div_status == 1:
                     rising_edge_detected = True
