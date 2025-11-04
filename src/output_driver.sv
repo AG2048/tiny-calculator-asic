@@ -164,13 +164,13 @@ module output_driver #(
   // Output
   assign o_sr_clk = sr_clk_enable ? clk : 1'b1; // Hold high when not enabled so no shifting on first edge
   assign o_sr_latch = latch_enable ? ~clk : 1'b0; // Latch once on falling edge of clock (ensure last bit is shifted in)
-  assign o_sr_oe_n = output_enable_n; // Latch once on rising edge
+  assign o_sr_oe_n = output_enable_n && rst_n; // Latch once on rising edge, but if rst_n == 0, OE is 0 by default showing empty display. When rst_n == 1, OE_n follows output_enable_n
   assign o_sr_data = output_data; // Currently 1 means segment on, and 0 means segment off. Order from MSB to LSB, a,b,c,d,e,f,g
   assign o_ready = input_ready;
 
   always_ff @(posedge clk) begin : fsm_state_register
     if (!rst_n) begin
-      od_current_state <= DISPLAY_VALUE; // Display the zeros on reset
+      od_current_state <= WAIT_INPUT; // Display the zeros on reset
     end else begin
       case (od_current_state)
         WAIT_INPUT: 
@@ -242,7 +242,7 @@ module output_driver #(
         begin
           sr_clk_enable   = 1'b0;
           latch_enable    = 1'b1;
-          output_enable_n = 1'b0;
+          output_enable_n = 1'b1;
           reset_counters  = 1'b0;
           showing_error   = 1'b0;
           input_ready     = 1'b0;
@@ -296,7 +296,7 @@ module output_driver #(
       // Showing Err for error
       if (display_counter == 2) begin
         // Show 'E'
-        case (display_counter)
+        case (per_display_counter)
           6: output_data = 1'b1; // a = 1
           5: output_data = 1'b0; // b = 0
           4: output_data = 1'b0; // c = 0
@@ -308,7 +308,7 @@ module output_driver #(
         endcase
       end else if (display_counter == 1 || display_counter == 0) begin
         // Show 'r'
-        case (display_counter)
+        case (per_display_counter)
           6: output_data = 1'b0; // a = 0
           5: output_data = 1'b0; // b = 0
           4: output_data = 1'b0; // c = 0
@@ -329,7 +329,7 @@ module output_driver #(
       // Actual data to display
       if (display_counter == highest_display_with_data_index && data_is_neg_reg) begin
         // Most significant digit is negative sign
-        case (display_counter)
+        case (per_display_counter)
           6: output_data = 1'b0; // a = 0
           5: output_data = 1'b0; // b = 0
           4: output_data = 1'b0; // c = 0
