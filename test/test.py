@@ -525,6 +525,18 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
         else:
             cocotb.log.info(f"Match at index {i}: {expected}")
 
+    # Release all forces
+    rst_n.value = Release()
+    i_bit_lines.value = Release()
+    i_ac_pin.value = Release()
+    i_add_pin.value = Release()
+    i_sub_pin.value = Release()
+    i_mul_pin.value = Release()
+    i_div_pin.value = Release()
+    i_eq_pin.value = Release()
+    i_neg_pin.value = Release()
+    i_ready.value = Release()
+
     assert num_errors == 0, f"Test failed with {num_errors} errors."
 
 
@@ -734,6 +746,16 @@ async def test_alu(dut, test_2s_complement, input_value_range_width, operation_s
             num_errors += 1
         else:
             cocotb.log.info(f"Match at index {i}: A={a}, B={b}, OP={op}, RESULT={received_result}, ERROR={received_error}")
+    
+    # Release all signals
+    rst_n.value = Release()
+    alu_input_a.value = Release()
+    alu_input_b.value = Release()
+    alu_op.value = Release()
+    input_signed.value = Release()
+    input_valid.value = Release()
+    output_ready.value = Release()
+
     assert num_errors == 0, f"ALU test failed with {num_errors} errors."
 
 def test_sequence_generator(include_neg_button, test_sequence_type, num_samples, sequence_length, allow_random_ac_presses, test_overflow, data_width, test_2s_complement):
@@ -1750,6 +1772,14 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
         if output_displays[idx] != expected_displays[idx]:
             cocotb.log.error(f"Final check - Mismatch at output {idx}: got {output_displays[idx]}, expected {expected_displays[idx]}")
             output_error_count += 1
+
+    # Release all forces
+    rst_n.value = Release()
+    i_button_data.value = Release()
+    i_button_valid.value = Release()
+    i_2s_comp_mode.value = Release()
+    i_display_ready.value = Release()
+
     assert output_error_count == 0, f"Output display monitoring detected {output_error_count} errors."
     op_status_error_count = op_status_task.result()
     assert op_status_error_count == 0, f"Operation status monitoring detected {op_status_error_count} errors."
