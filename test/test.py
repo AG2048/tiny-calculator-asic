@@ -9,6 +9,7 @@ import os
 import random
 
 DATA_WIDTH = 16
+NUM_DISPLAYS = 5
 
 class ButtonValueReader:
     def __init__(self, signal_data, signal_ready, signal_valid, clk, ready_mode="ALWAYS_ON", num_reads=100, random_delay_min_cyc=1, random_delay_max_cyc=10, expected_values_list=None):
@@ -1009,6 +1010,459 @@ def test_sequence_generator(include_neg_button, test_sequence_type, num_samples,
             else:
                 raise ValueError(f"Unknown test_sequence_type: {test_sequence_type}")
     return value_list
+
+def test_sequence_expected_display_and_op_status(test_sequence, data_width, num_displays, test_2s_complement):
+    """
+    Given a test sequence of button presses, compute the expected display values and operation status after each button press.
+
+    Returns:
+    expected_displays: list of expected display values after each button press
+        This can be a number (signed or unsigned based on test_2s_complement, leading 0 must not be shown, if result overflows, cap to DATA_WIDTH, and what's shown is limited to NUM_DISPLAYS digits minus "-" if negative),
+                      "Err" (error)
+                      "NONE"
+    expected_op_status: list of expected operation status after each button press 
+        This can be "NONE" (no op should show before next button press), 
+                    "+", "-", "*", "/",
+                    "HOLD" (Nothing should change on display until next button press)
+    """
+    expected_displays = ["0"] # Initial display is 0
+    expected_op_status = ["NONE"] # Initial op status is NONE
+
+    number_inputs = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"]
+    operation_inputs = ["+", "-", "*", "/"]
+    neg_input = "(-)"
+    ac_input = "AC"
+    eq_input = "="
+    def convert_number_to_display_string(number, num_displays):
+        if number == "Err":
+            return "Err"
+        if number == 0:
+            return "0"
+        is_negative = number < 0
+        hex_str = hex(abs(number))[2:].upper()  # Convert to hex string without '0x' prefix
+        # Trim to fit num_displays
+        if is_negative:
+            max_digits = num_displays - 1
+        else:
+            max_digits = num_displays
+        if len(hex_str) > max_digits:
+            # Overflow, Cut off higher bits
+            hex_str = hex_str[-max_digits:]
+        if is_negative:
+            hex_str = "-" + hex_str
+        return hex_str
+
+    number_a = 0
+    number_b = 0
+    current_op = None
+
+    status = "INPUT_A" # Or INPUT_B_NO_VAL, INPUT_B_AFTER_VAL, SHOWN_RESULT, ERROR_SHOWN
+    input_is_neg = False
+
+    for button in test_sequence:
+        if status == "INPUT_A":
+            if button in number_inputs:
+                digit_value = int(button, 16)
+                if input_is_neg and test_2s_complement:
+                    digit_value = -digit_value
+                temp_result = number_a * 16 + digit_value
+                # Check for overflow
+                if test_2s_complement:
+                    min_value = - (1 << (data_width - 1))
+                    max_value = (1 << (data_width - 1)) - 1
+                else:
+                    min_value = 0
+                    max_value = (1 << data_width) - 1
+                if temp_result < min_value or temp_result > max_value:
+                    # Overflow, ignore this digit input
+                    expected_displays.append("NONE")
+                    expected_op_status.append("HOLD")
+                    continue
+                number_a = temp_result
+                # Update display
+                expected_displays.append(convert_number_to_display_string(number_a, num_displays))
+                expected_op_status.append("NONE")
+            elif button == neg_input:
+                input_is_neg = not input_is_neg
+                if not test_2s_complement:
+                    input_is_neg = False
+                    expected_displays.append(convert_number_to_display_string(number_a, num_displays))
+                    expected_op_status.append("NONE")
+                    continue
+                if number_a == 0:
+                    expected_displays.append("0")
+                    expected_op_status.append("NONE")
+                elif number_a == -2**(data_width - 1) and test_2s_complement:
+                    # Cannot negate minimum value in 2's complement
+                    expected_displays.append(convert_number_to_display_string(number_a, num_displays))
+                    expected_op_status.append("NONE")
+                else:
+                    number_a = -number_a
+                    expected_displays.append(convert_number_to_display_string(number_a, num_displays))
+                    expected_op_status.append("NONE")
+            elif button in operation_inputs:
+                current_op = button
+                status = "INPUT_B_NO_VAL"
+                number_b = 0
+                input_is_neg = False
+                expected_displays.append("NONE")
+                expected_op_status.append(current_op)
+            elif button == eq_input:
+                # Nothing happens
+                expected_displays.append("NONE")
+                expected_op_status.append("NONE")
+            elif button == ac_input:
+                # Reset everything
+                number_a = 0
+                number_b = 0
+                current_op = None
+                status = "INPUT_A"
+                input_is_neg = False
+                expected_displays.append("0")
+                expected_op_status.append("NONE")
+            else:
+                # Unknown button, error
+                raise ValueError(f"Unknown button input: {button}")
+        elif status == "INPUT_B_NO_VAL":
+            if button in number_inputs:
+                digit_value = int(button, 16)
+                if input_is_neg and test_2s_complement:
+                    digit_value = -digit_value
+                temp_result = number_b * 16 + digit_value
+                # Check for overflow
+                if test_2s_complement:
+                    min_value = - (1 << (data_width - 1))
+                    max_value = (1 << (data_width - 1)) - 1
+                else:
+                    min_value = 0
+                    max_value = (1 << data_width) - 1
+                if temp_result < min_value or temp_result > max_value:
+                    # Overflow, ignore this digit input
+                    expected_displays.append("NONE")
+                    expected_op_status.append("HOLD")
+                    continue
+                number_b = temp_result
+                status = "INPUT_B_AFTER_VAL"
+                # Update display
+                expected_displays.append(convert_number_to_display_string(number_b, num_displays))
+                expected_op_status.append("HOLD")
+            elif button == neg_input:
+                input_is_neg = not input_is_neg
+                if not test_2s_complement:
+                    input_is_neg = False
+                    expected_displays.append("0")
+                    expected_op_status.append("HOLD")
+                    continue
+                expected_displays.append("0")
+                expected_op_status.append("HOLD")
+            elif button in operation_inputs:
+                # Change operation
+                current_op = button
+                expected_displays.append("NONE")
+                expected_op_status.append(current_op)
+            elif button == eq_input:
+                # Calculate A OP A
+                if current_op == "+":
+                    result = number_a + number_a
+                elif current_op == "-":
+                    result = number_a - number_a
+                elif current_op == "*": 
+                    result = number_a * number_a
+                elif current_op == "/":
+                    if number_a == 0:
+                        result = "Err"
+                    else:
+                        result = int(abs(number_a) // abs(number_a))
+                        if number_a * number_a < 0:
+                            result = -result
+                else:
+                    raise ValueError(f"Unknown operation: {current_op}")
+                # Check for overflow
+                if result != "Err":
+                    if test_2s_complement:
+                        bit_mask = (1 << data_width) - 1
+                        result = result & bit_mask
+                        # Convert to signed integer representation
+                        if result >= (1 << (data_width - 1)):
+                            result -= (1 << data_width)
+                    else:
+                        max_value = (1 << data_width) - 1
+                        result = result & max_value
+                number_a = result if result != "Err" else 0
+                if result == "Err":
+                    status = "ERROR_SHOWN"
+                    expected_displays.append("Err")
+                    expected_op_status.append("NONE")
+                else:
+                    status = "SHOWN_RESULT"
+                    expected_displays.append(convert_number_to_display_string(result, num_displays))
+                    expected_op_status.append("HOLD")
+            elif button == ac_input:
+                # Reset everything
+                number_a = 0
+                number_b = 0
+                current_op = None
+                status = "INPUT_A"
+                input_is_neg = False
+                expected_displays.append("0")
+                expected_op_status.append("NONE")
+            else:
+                # Unknown button, error
+                raise ValueError(f"Unknown button input: {button}")
+        elif status == "INPUT_B_AFTER_VAL":
+            if button in number_inputs:
+                digit_value = int(button, 16)
+                if input_is_neg and test_2s_complement:
+                    digit_value = -digit_value
+                temp_result = number_b * 16 + digit_value
+                # Check for overflow
+                if test_2s_complement:
+                    min_value = - (1 << (data_width - 1))
+                    max_value = (1 << (data_width - 1)) - 1
+                else:
+                    min_value = 0
+                    max_value = (1 << data_width) - 1
+                if temp_result < min_value or temp_result > max_value:
+                    # Overflow, ignore this digit input
+                    expected_displays.append("NONE")
+                    expected_op_status.append("HOLD")
+                    continue
+                number_b = temp_result
+                # Update display
+                expected_displays.append(convert_number_to_display_string(number_b, num_displays))
+                expected_op_status.append("HOLD")
+            elif button == neg_input:
+                input_is_neg = not input_is_neg
+                if not test_2s_complement:
+                    input_is_neg = False
+                    expected_displays.append(convert_number_to_display_string(number_b, num_displays))
+                    expected_op_status.append("HOLD")
+                    continue
+                if number_b == 0:
+                    expected_displays.append("0")
+                    expected_op_status.append("HOLD")
+                elif number_b == -2**(data_width - 1) and test_2s_complement:
+                    # Cannot negate minimum value in 2's complement
+                    expected_displays.append(convert_number_to_display_string(number_b, num_displays))
+                    expected_op_status.append("HOLD")
+                else:
+                    number_b = -number_b
+                    expected_displays.append(convert_number_to_display_string(number_b, num_displays))
+                    expected_op_status.append("HOLD")
+            elif button in operation_inputs:
+                # Calculate A OP B first
+                if current_op == "+":
+                    result = number_a + number_b
+                elif current_op == "-":
+                    result = number_a - number_b
+                elif current_op == "*": 
+                    result = number_a * number_b
+                elif current_op == "/":
+                    if number_b == 0:
+                        result = "Err"
+                    else:
+                        result = int(abs(number_a) // abs(number_b))
+                        if number_a * number_b < 0:
+                            result = -result
+                else:
+                    raise ValueError(f"Unknown operation: {current_op}")
+                # Check for overflow
+                if result != "Err":
+                    if test_2s_complement:
+                        bit_mask = (1 << data_width) - 1
+                        result = result & bit_mask
+                        # Convert to signed integer representation
+                        if result >= (1 << (data_width - 1)):
+                            result -= (1 << data_width)
+                    else:
+                        max_value = (1 << data_width) - 1
+                        result = result & max_value
+                number_a = result if result != "Err" else 0
+                number_b = number_b
+                current_op = button
+                if result == "Err":
+                    status = "ERROR_SHOWN"
+                    expected_displays.append("Err")
+                    expected_op_status.append("NONE")
+                else:
+                    status = "INPUT_B_NO_VAL"
+                    expected_displays.append(convert_number_to_display_string(result, num_displays))
+                    expected_op_status.append(current_op)
+            elif button == eq_input:
+                # Calculate A OP B
+                if current_op == "+":
+                    result = number_a + number_b
+                elif current_op == "-":
+                    result = number_a - number_b
+                elif current_op == "*": 
+                    result = number_a * number_b
+                elif current_op == "/":
+                    if number_b == 0:
+                        result = "Err"
+                    else:
+                        result = int(abs(number_a) // abs(number_b))
+                        if number_a * number_b < 0:
+                            result = -result
+                else:
+                    raise ValueError(f"Unknown operation: {current_op}")
+                # Check for overflow
+                if result != "Err":
+                    if test_2s_complement:
+                        bit_mask = (1 << data_width) - 1
+                        result = result & bit_mask
+                        # Convert to signed integer representation
+                        if result >= (1 << (data_width - 1)):
+                            result -= (1 << data_width)
+                    else:
+                        max_value = (1 << data_width) - 1
+                        result = result & max_value
+                number_a = result if result != "Err" else 0
+                if result == "Err":
+                    status = "ERROR_SHOWN"
+                    expected_displays.append("Err")
+                    expected_op_status.append("NONE")
+                else:
+                    status = "SHOWN_RESULT"
+                    expected_displays.append(convert_number_to_display_string(result, num_displays))
+                    expected_op_status.append("HOLD")
+            elif button == ac_input:
+                # Reset everything
+                number_a = 0
+                number_b = 0
+                current_op = None
+                status = "INPUT_A"
+                input_is_neg = False
+                expected_displays.append("0")
+                expected_op_status.append("NONE")
+            else:
+                # Unknown button, error
+                raise ValueError(f"Unknown button input: {button}")
+        elif status == "SHOWN_RESULT":
+            if button in number_inputs:
+                # Start new input A
+                input_is_neg = False
+                digit_value = int(button, 16)
+                if input_is_neg and test_2s_complement:
+                    digit_value = -digit_value
+                temp_result = digit_value
+                # Check for overflow
+                if test_2s_complement:
+                    min_value = - (1 << (data_width - 1))
+                    max_value = (1 << (data_width - 1)) - 1
+                else:
+                    min_value = 0
+                    max_value = (1 << data_width) - 1
+                if temp_result < min_value or temp_result > max_value:
+                    # Overflow, ignore this digit input
+                    continue
+                number_a = temp_result
+                status = "INPUT_A"
+                # Update display
+                expected_displays.append(convert_number_to_display_string(number_a, num_displays))
+                expected_op_status.append("NONE")
+            elif button == neg_input:
+                if test_2s_complement:
+                    # Flip A
+                    if number_a != 0 and number_a != -2**(data_width - 1):
+                        number_a = -number_a
+                # Show updated A
+                expected_displays.append(convert_number_to_display_string(number_a, num_displays))
+                expected_op_status.append("HOLD")
+            elif button in operation_inputs:
+                current_op = button
+                status = "INPUT_B_NO_VAL"
+                number_b = 0
+                input_is_neg = False
+                expected_displays.append("NONE")
+                expected_op_status.append(current_op)
+            elif button == eq_input:
+                # Calculate A OP B
+                if current_op == "+":
+                    result = number_a + number_b
+                elif current_op == "-":
+                    result = number_a - number_b
+                elif current_op == "*": 
+                    result = number_a * number_b
+                elif current_op == "/":
+                    if number_b == 0:
+                        result = "Err"
+                    else:
+                        result = int(abs(number_a) // abs(number_b))
+                        if number_a * number_b < 0:
+                            result = -result
+                else:
+                    raise ValueError(f"Unknown operation: {current_op}")
+                # Check for overflow
+                if result != "Err":
+                    if test_2s_complement:
+                        bit_mask = (1 << data_width) - 1
+                        result = result & bit_mask
+                        # Convert to signed integer representation
+                        if result >= (1 << (data_width - 1)):
+                            result -= (1 << data_width)
+                    else:
+                        max_value = (1 << data_width) - 1
+                        result = result & max_value
+                number_a = result if result != "Err" else 0
+                if result == "Err":
+                    status = "ERROR_SHOWN"
+                    expected_displays.append("Err")
+                    expected_op_status.append("NONE")
+                else:
+                    status = "SHOWN_RESULT"
+                    expected_displays.append(convert_number_to_display_string(result, num_displays))
+                    expected_op_status.append("HOLD")
+            elif button == ac_input:
+                # Reset everything
+                number_a = 0
+                number_b = 0
+                current_op = None
+                status = "INPUT_A"
+                input_is_neg = False
+                expected_displays.append("0")
+                expected_op_status.append("NONE")
+            else:
+                # Unknown button, error
+                raise ValueError(f"Unknown button input: {button}")
+        elif status == "ERROR_SHOWN":
+            if button == ac_input:
+                # Reset everything
+                number_a = 0
+                number_b = 0
+                current_op = None
+                status = "INPUT_A"
+                input_is_neg = False
+                expected_displays.append("0")
+                expected_op_status.append("NONE")
+            else:
+                # Ignore all other inputs
+                expected_displays.append("NONE")
+                expected_op_status.append("NONE")
+        else:
+            raise ValueError(f"Unknown status: {status}")
+    return expected_displays, expected_op_status
+
+def print_generated_test_sequence_and_expected_results():
+    """
+    test sequence options:
+    include_neg_button, test_sequence_type, num_samples, sequence_length, allow_random_ac_presses, test_overflow, data_width, test_2s_complement
+
+    DATA_WIDTH = 16
+    display_result need num_displays = 5
+    """
+    for include_neg_button in ["NO_NEGATIVE_INPUT", "NEGATIVE_INPUT_AFTER_VAL_INPUT", "NEGATIVE_INPUT_IN_BETWEEN_VAL_INPUT"]:
+        for test_sequence_type in ["ONE", "SEQUENCE_BY_OP", "SEQUENCE_AFTER_EQ", "RANDOM_BUTTON_PRESS"]:
+            for num_samples in [2]:
+                for sequence_length in [10]:
+                    for allow_random_ac_presses in [False, True]:
+                        for test_overflow in [False, True]:
+                            for test_2s_complement in [False, True]:
+                                print(f"--- Generated Test Sequence with include_neg_button={include_neg_button}, test_sequence_type={test_sequence_type}, num_samples={num_samples}, sequence_length={sequence_length}, allow_random_ac_presses={allow_random_ac_presses}, test_overflow={test_overflow}, test_2s_complement={test_2s_complement} ---")
+                                test_sequence = test_sequence_generator(include_neg_button, test_sequence_type, num_samples, sequence_length, allow_random_ac_presses, test_overflow, DATA_WIDTH, test_2s_complement)
+                                expected_displays, expected_op_status = test_sequence_expected_display_and_op_status(test_sequence, DATA_WIDTH, 5, test_2s_complement)
+                                for idx in range(len(test_sequence)):
+                                    print(f"Button Press: {test_sequence[idx]:<5} | Expected Display: {expected_displays[idx+1]:<8} | Expected Op Status: {expected_op_status[idx+1]}")
+                                print("\n\n\n\n\n")
 
 @cocotb.test(skip=os.environ.get("GATES")=="yes")
 @cocotb.parametrize(
