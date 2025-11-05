@@ -540,6 +540,94 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     assert num_errors == 0, f"Test failed with {num_errors} errors."
 
 
+class OutputDisplay: 
+    def __init__(self, srdata, srclk, srlatch, oe_n, expected_results, num_displays=NUM_DISPLAYS):
+        self.srdata = srdata
+        self.srclk = srclk
+        self.srlatch = srlatch
+        self.oe_n = oe_n
+        self.expected_results = expected_results
+        self.num_displays = num_displays
+        self.output_registers = [0] * num_displays * 7 # index 0 is MSB (left most), every 7 values are "abcdefg"
+        self.hidden_registers = [0] * num_displays * 7
+        self.values_shown = []
+        self.output_latch_task = cocotb.start_soon(self.output_latch_watcher())
+        self.hidden_registers_task = cocotb.start_soon(self.hidden_registers_watcher())
+        self.output_enable_task = cocotb.start_soon(self.output_enable_watching())
+
+    def decode_output_registers(self):
+        # Converts output_registers to a string
+        result_decoder = {
+            "1111110": "0",
+            "0110000": "1",
+            "1101101": "2",
+            "1111001": "3",
+            "0110011": "4",
+            "1011011": "5",
+            "1011111": "6",
+            "1110000": "7",
+            "1111111": "8",
+            "1111011": "9",
+            "1110111": "A",
+            "0011111": "B",
+            "1001110": "C",
+            "0111101": "D",
+            "1001111": "E",
+            "1000111": "F",
+            "0000101": "r",
+            "0000001": "-",
+            "0000000": "_"
+        }
+        result_string = ""
+
+        for display_index in range(self.num_displays):
+            output_code = ""
+            for i in range(7):
+                output_code = output_code + str(self.output_registers[display_index * 7 + i])
+            if output_code not in result_decoder:
+                raise ValueError(f"Result Code {output_code} not found in possible results")
+            else:
+                result_string += result_decoder[output_code]
+        
+        # Lstrip "_"
+        if result_string != "_" * self.num_displays:
+            result_string = result_string.lstrip("_")
+        return result_string
+
+    async def output_latch_watcher(self):
+        while len(self.values_shown) < len(self.expected_results):
+            await RisingEdge(self.srlatch)
+            for i in range(len(self.hidden_registers)):
+                self.output_registers[i] = self.hidden_registers[i]
+            if self.oe_n.value == 0:
+                decoded_value = self.decode_output_registers()
+                self.values_shown.append(decoded_value)
+                expected_value = self.expected_results[len(self.values_shown)-1]
+                if decoded_value != expected_value:
+                    cocotb.log.error(f"Output Display (LATCH WATCHER) Mismatch: expected {expected_value}, got {decoded_value}")
+                else:
+                    cocotb.log.info(f"Output Display (LATCH WATCHER) Match: {decoded_value}")
+
+    async def hidden_registers_watcher(self):
+        while True:
+            await RisingEdge(self.srclk)
+            for i in range(len(self.hidden_registers)-1):
+                self.hidden_registers[i] = self.hidden_registers[i+1]
+            self.hidden_registers[len(self.hidden_registers)-1] = self.srdata.value
+
+    async def output_enable_watching(self):
+        # Falling edge of OE is when data is shown
+        while len(self.values_shown) < len(self.expected_results):
+            await FallingEdge(self.oe_n)
+            decoded_value = self.decode_output_registers()
+            self.values_shown.append(decoded_value)
+            expected_value = self.expected_results[len(self.values_shown)-1]
+            if decoded_value != expected_value:
+                cocotb.log.error(f"Output Display (OE WATCHER) Mismatch on OE falling edge: expected {expected_value}, got {decoded_value}")
+            else:
+                cocotb.log.info(f"Output Display (OE WATCHER) Match on OE falling edge: {decoded_value}")
+
+
 @cocotb.test(skip=os.environ.get("GATES")=="yes")
 @cocotb.parametrize(
     valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
@@ -547,11 +635,146 @@ async def test_button_reader(dut, ready_timing, button_press_mode, input_order, 
     input_order=["IN_ORDER", "RANDOM_ORDER"],
     allow_error=[False, True], # Allow i_error = 1 with 10% chance
     num_samples=[int(os.environ.get("NUM_SAMPLES", "100"))],
-    timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))]
+    timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
+    data_width=[DATA_WIDTH],
+    num_displays=[NUM_DISPLAYS],
 )
-async def test_output_driver():
-    assert 1==2, "Not implemented yet."
+async def test_output_driver(dut, valid_timing, test_neg_displays, input_order, allow_error, num_samples, timeout_ms, data_width, num_displays):
+    output_driver = dut.user_project.od_inst
+    cocotb.log.info(f"Starting Output Driver test with valid_timing={valid_timing}, test_neg_displays={test_neg_displays}, input_order={input_order}, allow_error={allow_error}, num_samples={num_samples}")
 
+    clk = dut.clk
+    rst_n = dut.rst_n
+    i_data = output_driver.i_data
+    i_error = output_driver.i_error
+    i_data_is_neg = output_driver.i_data_is_neg
+    i_valid = output_driver.i_valid
+    o_ready = output_driver.o_ready
+    o_sr_data = output_driver.o_sr_data
+    o_sr_clk = output_driver.o_sr_clk
+    o_sr_latch = output_driver.o_sr_latch
+    o_sr_oe_n = output_driver.o_sr_oe_n
+
+    # Start clock
+    clock = Clock(clk, 10, unit="us")
+    cocotb.start_soon(clock.start())
+    await ClockCycles(dut.clk, 10) # Wait 10 cycles for stable
+
+    # Reset
+    dut._log.info("Reset")
+    rst_n.value = Force(0)
+    i_data.value = Force(0)
+    i_error.value = Force(0)
+    i_data_is_neg.value = Force(0)
+    i_valid.value = Force(0)
+    await ClockCycles(dut.clk, 10)
+    rst_n.value = Force(1)
+
+    # Prepare expected results
+    expected_results = []
+    min_value = - (2**(data_width - 1)) if test_neg_displays else 0
+    max_value = (2**(data_width - 1)) - 1 if test_neg_displays else (2**data_width) - 1
+    initial_value = random.randint(min_value, max_value)
+    for i in range(num_samples):
+        if input_order == "IN_ORDER":
+            value = (initial_value + i)
+            if value > max_value:
+                value = min_value + (value - max_value - 1)
+        elif input_order == "RANDOM_ORDER":
+            value = random.randint(min_value, max_value)
+        else:
+            raise ValueError(f"Unknown input_order: {input_order}")
+        if allow_error and random.random() < 0.1:
+            expected_results.append("Err")
+        else:
+            # Convert value to hex string, padded to num_displays
+            abs_val = abs(value)
+            hex_str = hex(abs_val)[2:].upper()  # Remove '0x' prefix and uppercase
+            if value < 0:
+                hex_str = "-" + hex_str
+            expected_results.append(hex_str)
+
+    cocotb.log.info(f"Expected Results: {expected_results}")
+    
+    async def generate_input_valid(i_valid_sig, valid_timing):
+        await FallingEdge(clk)
+        if valid_timing == "ALWAYS_ON":
+            while True:
+                i_valid_sig.value = Force(1)
+                await FallingEdge(clk)
+        elif valid_timing == "RANDOM_VALID":
+            while True:
+                i_valid_sig.value = Force(random.choice([0, 1]))
+                await ClockCycles(clk, random.randint(1, 10))
+                await FallingEdge(clk)
+        else:
+            raise ValueError(f"Unknown valid_timing: {valid_timing}")
+
+    async def apply_inputs(i_data_sig, i_error_sig, i_data_is_neg_sig, i_valid_sig, o_ready_sig, expected_results):
+        await FallingEdge(clk)
+        for expected in expected_results:
+            # Apply inputs
+            if expected == "Err":
+                i_error_sig.value = Force(1)
+                i_data_sig.value = Force(random.randint(0, 2**data_width - 1))
+                i_data_is_neg_sig.value = Force(random.choice([0, 1]))
+            else:
+                i_error_sig.value = Force(0)
+                if expected.startswith("-"):
+                    i_data_is_neg_sig.value = Force(1)
+                    hex_part = expected[1:]
+                else:
+                    i_data_is_neg_sig.value = Force(0)
+                    hex_part = expected
+                int_value = int(hex_part, 16)
+                i_data_sig.value = Force(int_value)
+            # Wait for ready
+            while True:
+                await RisingEdge(clk)
+                if o_ready_sig.value == 1 and i_valid_sig.value == 1:
+                    break
+            cocotb.log.info(f"Applied input: data={i_data_sig.value}, error={i_error_sig.value}, is_neg={i_data_is_neg_sig.value}")
+            await FallingEdge(clk)  # Hold for 1 cycle
+
+
+    display_watcher = OutputDisplay(
+        srdata = o_sr_data,
+        srclk = o_sr_clk,
+        srlatch = o_sr_latch, 
+        oe_n = o_sr_oe_n,
+        expected_results = expected_results,
+        num_displays = num_displays
+    )
+    # Start coroutines
+    input_valid_coro = cocotb.start_soon(generate_input_valid(i_valid, valid_timing))
+    apply_inputs_coro = cocotb.start_soon(apply_inputs(i_data, i_error, i_data_is_neg, i_valid, o_ready, expected_results))
+
+    # Wait for apply_inputs, and output display to finish
+    combined_coro = Combine(apply_inputs_coro, First(display_watcher.output_latch_task, display_watcher.output_enable_task))
+    await First(combined_coro, Timer(timeout_ms, unit='ms'))
+
+    results_read = display_watcher.values_shown
+    error_count = 0
+    for i, expected in enumerate(expected_results):
+        if i >= len(results_read):
+            cocotb.log.error(f"Missing displayed value at index {i}: expected {expected}, got nothing")
+            error_count += 1
+            continue
+        received = results_read[i]
+        if expected != received:
+            cocotb.log.error(f"Display Mismatch at index {i}: expected {expected}, got {received}")
+            error_count += 1
+        else:
+            cocotb.log.info(f"Display Match at index {i}: {expected}")
+    
+    # Release all forces
+    rst_n.value = Release()
+    i_data.value = Release()
+    i_error.value = Release()
+    i_data_is_neg.value = Release()
+    i_valid.value = Release()
+    assert error_count == 0, f"Test failed with {error_count} display errors."
+    
 
 @cocotb.test(skip=os.environ.get("GATES")=="yes")
 @cocotb.parametrize(
