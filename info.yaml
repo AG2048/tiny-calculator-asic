@@ -48,14 +48,14 @@ pinout:
   uo[7]: "o_OE_n"
 
   # Bidirectional pins
-  uio[0]: "i_EQ"
-  uio[1]: "i_AC"
-  uio[2]: "i_NEG"
-  uio[3]: "i_NEG_EN"
-  uio[4]: "o_ADD"
-  uio[5]: "o_SUB"
-  uio[6]: "o_MUL"
-  uio[7]: "o_DIV"
+  uio[0]: "o_ADD"
+  uio[1]: "o_SUB"
+  uio[2]: "o_MUL"
+  uio[3]: "o_DIV"
+  uio[4]: "i_EQ"
+  uio[5]: "i_AC"
+  uio[6]: "i_NEG"
+  uio[7]: "i_NEG_EN"
 
 # Do not change!
 yaml_version: 6

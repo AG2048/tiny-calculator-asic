@@ -66,18 +66,18 @@ module tt_um_ag2048_tiny_calculator (
   wire                  o_sr_oe_n;
 
   // Assign uio pins direction and unused pins
-  assign uio_oe             = 8'b11110000;          // uio[7:4] are outputs, others are inputs
-  assign uio_out[3:0]       = 4'b0000;              // Unused output pins
-  assign uio_out[4]         = o_add_state_display;
-  assign uio_out[5]         = o_sub_state_display;
-  assign uio_out[6]         = o_mul_state_display;
-  assign uio_out[7]         = o_div_state_display;
+  assign uio_oe             = 8'b00001111;          // uio[7:4] are outputs, others are inputs
+  assign uio_out[0]         = o_add_state_display;
+  assign uio_out[1]         = o_sub_state_display;
+  assign uio_out[2]         = o_mul_state_display;
+  assign uio_out[3]         = o_div_state_display;
+  assign uio_out[7:4]       = 4'b0000;              // Unused output pins
 
-  assign i_eq_pin           = uio_in[0];
-  assign i_ac_pin           = uio_in[1];
-  assign i_neg_pin          = uio_in[2];
-  assign i_2s_comp_mode_pin = uio_in[3];
-  wire   _unused            = &{uio_in[7:4], ena, 1'b0}; // Prevent unused input warnings
+  assign i_eq_pin           = uio_in[4];
+  assign i_ac_pin           = uio_in[5];
+  assign i_neg_pin          = uio_in[6];
+  assign i_2s_comp_mode_pin = uio_in[7];
+  wire   _unused            = &{uio_in[3:0], ena, 1'b0}; // Prevent unused input warnings
 
   // Assign signals to Output Pins
   assign uo_out[3:0] = o_word_lines;

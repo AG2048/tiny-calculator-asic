@@ -54,15 +54,15 @@ module tb ();
   wire                  o_sr_oe_n;
 
   // Assign uio pins direction and unused pins
-  assign o_add_state_display = uio_out[4];
-  assign o_sub_state_display = uio_out[5];
-  assign o_mul_state_display = uio_out[6];
-  assign o_div_state_display = uio_out[7];
+  assign o_add_state_display = uio_out[0];
+  assign o_sub_state_display = uio_out[1];
+  assign o_mul_state_display = uio_out[2];
+  assign o_div_state_display = uio_out[3];
 
-  assign uio_in[0] = i_eq_pin;
-  assign uio_in[1] = i_ac_pin;
-  assign uio_in[2] = i_neg_pin;
-  assign uio_in[3] = i_2s_comp_mode_pin;
+  assign uio_in[4] = i_eq_pin;
+  assign uio_in[5] = i_ac_pin;
+  assign uio_in[6] = i_neg_pin;
+  assign uio_in[7] = i_2s_comp_mode_pin;
 
   // Assign signals to Output Pins
   assign o_word_lines = uo_out[3:0];
