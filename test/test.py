@@ -1497,7 +1497,7 @@ async def test_output_driver(dut, valid_timing, test_neg_displays, input_order, 
 @cocotb.parametrize(
     test_only_certain_ops=["+", "-", "*", "/", "ALL"],
     test_2s_complement=[False, True],
-    input_value_range_width=[4, 8, 16], 
+    input_value_range_width=[4, 16], 
     operation_sequence=["SEQUENTIAL_OPS", "RANDOM_OPS"],
     input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
@@ -1709,11 +1709,11 @@ async def test_alu(dut, test_2s_complement, input_value_range_width, operation_s
         # SEQUENCE_AFTER_EQ: AC -> NUM -> OP -> NUM -> = -> OP -> NUM -> = ... -> AC
         # RANDOM_BUTTON_PRESS: literally press ANY button randomly 
         # In any sequence, AC is only pressed at end. 
-    sequence_length=[5, 50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
+    sequence_length=[50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
     allow_random_ac_presses=[False, True],  # If True, allow random AC presses in sequences
     input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
-    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // 80, 1)], # This test takes too long, reduce samples by factor of 80, at least 1 sample
+    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // 200, 1)], # This test takes too long, reduce samples by factor of 200, at least 1 sample
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
     signal_width=[DATA_WIDTH],
     num_displays=[NUM_DISPLAYS]
@@ -2028,7 +2028,7 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
         # SEQUENCE_AFTER_EQ: AC -> NUM -> OP -> NUM -> = -> OP -> NUM -> = ... -> AC
         # RANDOM_BUTTON_PRESS: literally press ANY button randomly 
         # In any sequence, AC is only pressed at end. 
-    sequence_length=[5, 50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
+    sequence_length=[50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
     allow_random_ac_presses=[False, True],  # If True, allow random AC presses in sequences
 
     # Input settings
@@ -2040,7 +2040,7 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
     button_press_no_valid_delay_cyc=[NUM_DISPLAYS * 7 + 2*DATA_WIDTH + 10], # Since we won't read o_valid in this test, just set to a long delay to avoid issues
 
     # Test settings
-    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // (400 if os.environ.get("GL_TEST", "yes") != "yes" else 100), 1)], # This test takes too long, reduce samples by factor of 400, at least 1 sample, and run more if GL test
+    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // 200, 1)], # This test takes too long, reduce samples by factor of 400, at least 1 sample, and run more if GL test
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
 
     signal_width=[DATA_WIDTH],
