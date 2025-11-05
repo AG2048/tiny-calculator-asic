@@ -2040,7 +2040,7 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
     button_press_no_valid_delay_cyc=[NUM_DISPLAYS * 7 + 2*DATA_WIDTH + 10], # Since we won't read o_valid in this test, just set to a long delay to avoid issues
 
     # Test settings
-    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // (400 if os.environ.get("GL_TEST", yes) != yes else 100), 1)], # This test takes too long, reduce samples by factor of 400, at least 1 sample, and run more if GL test
+    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // (400 if os.environ.get("GL_TEST", "yes") != "yes" else 100), 1)], # This test takes too long, reduce samples by factor of 400, at least 1 sample, and run more if GL test
     timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
 
     signal_width=[DATA_WIDTH],
