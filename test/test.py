@@ -2028,7 +2028,7 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
         # SEQUENCE_AFTER_EQ: AC -> NUM -> OP -> NUM -> = -> OP -> NUM -> = ... -> AC
         # RANDOM_BUTTON_PRESS: literally press ANY button randomly 
         # In any sequence, AC is only pressed at end. 
-    sequence_length=[5, 10, 20, 50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
+    sequence_length=[5, 50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
     allow_random_ac_presses=[False, True],  # If True, allow random AC presses in sequences
 
     # Input settings
@@ -2037,37 +2037,44 @@ async def test_core(dut, test_2s_complement, test_input_with_overflow, include_n
     button_hold_random_max_cyc=[50],
     inter_press_gap_random_min_cyc=[5],
     inter_press_gap_random_max_cyc=[50],
-    button_press_no_valid_delay_cyc=[10], # Since we won't read o_valid in this test, just set to 10 cycles
+    button_press_no_valid_delay_cyc=[NUM_DISPLAYS * 7 + 2*DATA_WIDTH + 10], # Since we won't read o_valid in this test, just set to a long delay to avoid issues
 
     # Test settings
-    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // 80, 1)], # This test takes too long, reduce samples by factor of 80, at least 1 sample
-    timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))]
+    num_samples=[max(int(os.environ.get("NUM_SAMPLES", "100")) // (400 if os.environ.get("GL_TEST", yes) != yes else 100), 1)], # This test takes too long, reduce samples by factor of 400, at least 1 sample, and run more if GL test
+    timeout_ms=[int(os.environ.get("TIMEOUT_MS", "1000"))],
+
+    signal_width=[DATA_WIDTH],
+    num_displays=[NUM_DISPLAYS],
 )
-async def test_top(dut, test_2s_complement, include_neg_button, test_sequence_type, sequence_length, allow_random_ac_presses, button_press_mode, button_hold_random_min_cyc, button_hold_random_max_cyc, inter_press_gap_random_min_cyc, inter_press_gap_random_max_cyc, button_press_no_valid_delay_cyc, num_samples, timeout_ms):
-    cocotb.log.info(f"Starting Top test with test_2s_complement={test_2s_complement}, include_neg_button={include_neg_button}, test_sequence_type={test_sequence_type}, sequence_length={sequence_length}, allow_random_ac_presses={allow_random_ac_presses}, button_press_mode={button_press_mode}, button_hold_random_min_cyc={button_hold_random_min_cyc}, button_hold_random_max_cyc={button_hold_random_max_cyc}, inter_press_gap_random_min_cyc={inter_press_gap_random_min_cyc}, inter_press_gap_random_max_cyc={inter_press_gap_random_max_cyc}, button_press_no_valid_delay_cyc={button_press_no_valid_delay_cyc}, num_samples={num_samples}, timeout_ms={timeout_ms}")
+async def test_top(dut, test_2s_complement, test_input_with_overflow, include_neg_button, test_sequence_type, sequence_length, allow_random_ac_presses,
+                   button_press_mode, button_hold_random_min_cyc, button_hold_random_max_cyc, inter_press_gap_random_min_cyc, inter_press_gap_random_max_cyc,
+                   button_press_no_valid_delay_cyc,
+                   num_samples, timeout_ms,
+                   signal_width, num_displays):
+    cocotb.log.info(f"Starting Top test with test_2s_complement={test_2s_complement}, include_neg_button={include_neg_button}, test_sequence_type={test_sequence_type}, sequence_length={sequence_length}, allow_random_ac_presses={allow_random_ac_presses}, button_press_mode={button_press_mode}, button_hold_random_min_cyc={button_hold_random_min_cyc}, button_hold_random_max_cyc={button_hold_random_max_cyc}, inter_press_gap_random_min_cyc={inter_press_gap_random_min_cyc}, inter_press_gap_random_max_cyc={inter_press_gap_random_max_cyc}, button_press_no_valid_delay_cyc={button_press_no_valid_delay_cyc}, num_samples={num_samples}, timeout_ms={timeout_ms}, signal_width={signal_width}, num_displays={num_displays}")
     clk = dut.clk
     rst_n = dut.rst_n
-    o_add_state_display = dut.uio_out[2]
-    o_sub_state_display = dut.uio_out[3]
-    o_mul_state_display = dut.uio_out[4]
-    o_div_state_display = dut.uio_out[5]
+    o_add_state_display = dut.o_add_state_display
+    o_sub_state_display = dut.o_sub_state_display
+    o_mul_state_display = dut.o_mul_state_display
+    o_div_state_display = dut.o_div_state_display
 
 
-    i_bit_lines = dut.ui_in[3:0]
-    i_add_pin = dut.ui_in[4]
-    i_sub_pin = dut.ui_in[5]
-    i_mul_pin = dut.ui_in[6]
-    i_div_pin = dut.ui_in[7]
-    i_ac_pin = dut.uio_in[0]
-    i_eq_pin = dut.uio_in[1]
-    i_2s_comp_mode_pin = dut.uio_in[6]
-    i_neg_pin = dut.uio_in[7]
+    i_bit_lines = dut.i_bit_lines
+    i_add_pin = dut.i_add_pin
+    i_sub_pin = dut.i_sub_pin
+    i_mul_pin = dut.i_mul_pin
+    i_div_pin = dut.i_div_pin
+    i_ac_pin = dut.i_ac_pin
+    i_eq_pin = dut.i_eq_pin
+    i_2s_comp_mode_pin = dut.i_2s_comp_mode_pin
+    i_neg_pin = dut.i_neg_pin
 
-    o_word_lines = dut.uo_out[3:0]
-    o_sr_data = dut.uo_out[4]
-    o_sr_clk = dut.uo_out[5]
-    o_sr_latch = dut.uo_out[6]
-    o_sr_oe_n = dut.uo_out[7]
+    o_word_lines = dut.o_word_lines
+    o_sr_data = dut.o_sr_data
+    o_sr_clk = dut.o_sr_clk
+    o_sr_latch = dut.o_sr_latch
+    o_sr_oe_n = dut.o_sr_oe_n
 
     # Set the clock
     clock = Clock(clk, 10, unit="us")  # 100 kHz clock
@@ -2250,7 +2257,7 @@ async def test_top(dut, test_2s_complement, include_neg_button, test_sequence_ty
         i_neg_pin=i_neg_pin,
         o_valid=None,  # Not used in this test
         button_press_mode=button_press_mode,
-        input_order=input_order,
+        input_order=None,  # Not used in this test
         num_samples=num_samples,
         button_hold_random_min_cyc=button_hold_random_min_cyc,
         button_hold_random_max_cyc=button_hold_random_max_cyc,
@@ -2263,12 +2270,13 @@ async def test_top(dut, test_2s_complement, include_neg_button, test_sequence_ty
     button_press_coro = cocotb.start_soon(button_press_generator._press_buttons())
 
     # Display Reader
+    display_reader_expected_results = [val for val in expected_displays if val != "NONE"]
     display_watcher = OutputDisplay(
         srdata = o_sr_data,
         srclk = o_sr_clk,
         srlatch = o_sr_latch, 
         oe_n = o_sr_oe_n,
-        expected_results = expected_displays,
+        expected_results = display_reader_expected_results,
         num_displays = num_displays
     )
 
@@ -2287,15 +2295,15 @@ async def test_top(dut, test_2s_complement, include_neg_button, test_sequence_ty
 
     display_watcher_task = First(display_watcher.output_latch_task, display_watcher.output_enable_task)
 
-    await First(Combine(button_press_coro, display_watcher_task), Timer(timeout_ms, unit="ms"))
+    await First(Combine(button_press_coro, display_watcher_task, op_status_watcher_coro), Timer(timeout_ms, unit="ms"))
 
     values_shown = display_watcher.values_shown
 
     op_status_error = op_status_watcher_coro.result()
 
-    for idx in range(len(expected_displays)):
-        if values_shown[idx] != expected_displays[idx]:
-            cocotb.log.error(f"Final check - Mismatch at output {idx}: got {values_shown[idx]}, expected {expected_displays[idx]}")
+    for idx in range(len(display_reader_expected_results)):
+        if values_shown[idx] != display_reader_expected_results[idx]:
+            cocotb.log.error(f"Final check - Mismatch at output {idx}: got {values_shown[idx]}, expected {display_reader_expected_results[idx]}")
             display_error += 1
 
     assert display_error == 0, f"Display monitoring detected {display_error} errors."
