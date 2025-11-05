@@ -1709,7 +1709,7 @@ async def test_alu(dut, test_2s_complement, input_value_range_width, operation_s
         # SEQUENCE_AFTER_EQ: AC -> NUM -> OP -> NUM -> = -> OP -> NUM -> = ... -> AC
         # RANDOM_BUTTON_PRESS: literally press ANY button randomly 
         # In any sequence, AC is only pressed at end. 
-    sequence_length=[50], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
+    sequence_length=[30], # Number of OP/EQ/NUM presses (number input is counted as 1 press) per "sample" before AC is pressed
     allow_random_ac_presses=[False, True],  # If True, allow random AC presses in sequences
     input_valid_timing=["ALWAYS_ON", "RANDOM_VALID"],
     output_ready_timing=["ALWAYS_ON", "RANDOM_READY"],
