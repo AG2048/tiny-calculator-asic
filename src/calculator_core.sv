@@ -1023,7 +1023,7 @@ module calculator_core #(
         if (~i_2s_comp_mode && ~(|reg_a[DATA_WIDTH-1: DATA_WIDTH-4])) begin
           // Unsigned mode, and all 4 upper bits are 0
           reg_a <= fa_sum;
-        end else if (~(|reg_a) || (i_2s_comp_mode && ((&reg_a[DATA_WIDTH-1: DATA_WIDTH-4]) || ~(|reg_a[DATA_WIDTH-1: DATA_WIDTH-4])) && (fa_sum[DATA_WIDTH-1] == reg_a[DATA_WIDTH-1]))) begin
+        end else if (~(|reg_a) || (i_2s_comp_mode && ((&reg_a[DATA_WIDTH-1: DATA_WIDTH-5]) || ~(|reg_a[DATA_WIDTH-1: DATA_WIDTH-4])) && (fa_sum[DATA_WIDTH-1] == reg_a[DATA_WIDTH-1]))) begin
           // Signed mode, all 4 upper bits are all 1 or all 0, AND result has same sign as beginning
           // If reg_a is 0, always allow loading in new value
           reg_a <= fa_sum;
@@ -1049,7 +1049,7 @@ module calculator_core #(
         if (~i_2s_comp_mode && ~(|reg_b[DATA_WIDTH-1: DATA_WIDTH-4])) begin
           // Unsigned mode, and all 4 upper bits are 0
           reg_b <= fa_sum;
-        end else if (~(|reg_b) || (i_2s_comp_mode && ((&reg_b[DATA_WIDTH-1: DATA_WIDTH-4]) || ~(|reg_b[DATA_WIDTH-1: DATA_WIDTH-4])) && (fa_sum[DATA_WIDTH-1] == reg_b[DATA_WIDTH-1]))) begin
+        end else if (~(|reg_b) || (i_2s_comp_mode && ((&reg_b[DATA_WIDTH-1: DATA_WIDTH-5]) || ~(|reg_b[DATA_WIDTH-1: DATA_WIDTH-4])) && (fa_sum[DATA_WIDTH-1] == reg_b[DATA_WIDTH-1]))) begin
           // Signed mode, all 4 upper bits are all 1 or all 0, AND result has same sign as beginning
           // If reg_b is all 0, always allow loading in new value
           reg_b <= fa_sum;
