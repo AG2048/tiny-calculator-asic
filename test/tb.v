@@ -55,33 +55,29 @@ module tb ();
   wire                  o_sr_oe_n;
 
   // Assign uio pins direction and unused pins
-  assign uio_oe             = 8'b00111100;          // uio[2:5] are outputs, others are inputs
-  assign uio_out[1:0]       = 2'b00;                // Unused output pins
-  assign uio_out[2]         = o_add_state_display;
-  assign uio_out[3]         = o_sub_state_display;
-  assign uio_out[4]         = o_mul_state_display;
-  assign uio_out[5]         = o_div_state_display;
-  assign uio_out[7:6]       = 2'b00;                // Unused output pins
+  assign o_add_state_display = uio_out[2];
+  assign o_sub_state_display = uio_out[3];
+  assign o_mul_state_display = uio_out[4];
+  assign o_div_state_display = uio_out[5];
 
-  assign i_ac_pin           = uio_in[0];
-  assign i_eq_pin           = uio_in[1];
-  assign i_2s_comp_mode_pin = uio_in[6];
-  assign i_neg_pin          = uio_in[7];
-  wire   _unused            = &{uio_in[5:2], ena, 1'b0}; // Prevent unused input warnings
+  assign uio_in[0] = i_ac_pin;
+  assign uio_in[1] = i_eq_pin;
+  assign uio_in[6] = i_2s_comp_mode_pin;
+  assign uio_in[7] = i_neg_pin;
 
   // Assign signals to Output Pins
-  assign uo_out[3:0] = o_word_lines;
-  assign uo_out[4]   = o_sr_data;
-  assign uo_out[5]   = o_sr_clk;
-  assign uo_out[6]   = o_sr_latch;
-  assign uo_out[7]   = o_sr_oe_n;
+  assign o_word_lines = uo_out[3:0];
+  assign o_sr_data    = uo_out[4];
+  assign o_sr_clk     = uo_out[5];
+  assign o_sr_latch   = uo_out[6];
+  assign o_sr_oe_n    = uo_out[7];
   
   // Assign Input Pins to signals
-  assign i_bit_lines        = ui_in[3:0];
-  assign i_add_pin          = ui_in[4];
-  assign i_sub_pin          = ui_in[5];
-  assign i_mul_pin          = ui_in[6];
-  assign i_div_pin          = ui_in[7];
+  assign      ui_in[3:0]  = i_bit_lines;
+  assign      ui_in[4]  = i_add_pin;
+  assign      ui_in[5]  = i_sub_pin;
+  assign      ui_in[6]  = i_mul_pin;
+  assign      ui_in[7]  = i_div_pin;
 
   tt_um_ag2048_calculator user_project (
 
