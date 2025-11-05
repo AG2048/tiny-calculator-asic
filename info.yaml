@@ -3,7 +3,7 @@ project:
   title:        "Tiny Calculator"      # Project title
   author:       "Andy Gong"      # Your name
   discord:      "ag2048"      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "A tiny calculator with input and output drivers requiring minimal external chips"      # One line description of what your project does
+  description:  "A tiny calculator chip with built-in I/O drivers"      # One line description of what your project does
   language:     "SystemVerilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     0       # Clock frequency in Hz (or 0 if not applicable)
 
@@ -11,7 +11,7 @@ project:
   tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_ag2048_calculator"
+  top_module:  "tt_um_ag2048_tiny_calculator"
 
   # List your project's source files here.
   # Source files must be in ./src and you must list each source file separately, one per line.
@@ -28,34 +28,34 @@ project:
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
 pinout:
   # Inputs
-  ui[0]: "Numpad Bit Line 0"
-  ui[1]: "Numpad Bit Line 1"
-  ui[2]: "Numpad Bit Line 2"
-  ui[3]: "Numpad Bit Line 3"
-  ui[4]: "Add Button Active High"
-  ui[5]: "Sub Button Active High"
-  ui[6]: "Mul Button Active High"
-  ui[7]: "Div Button Active High"
+  ui[0]: "i_BL0"
+  ui[1]: "i_BL1"
+  ui[2]: "i_BL2"
+  ui[3]: "i_BL3"
+  ui[4]: "i_ADD"
+  ui[5]: "i_SUB"
+  ui[6]: "i_MUL"
+  ui[7]: "i_DIV"
 
   # Outputs
-  uo[0]: "Numpad Word Line 0"
-  uo[1]: "Numpad Word Line 1"
-  uo[2]: "Numpad Word Line 2"
-  uo[3]: "Numpad Word Line 3"
-  uo[4]: "SR SER (Data)"
-  uo[5]: "SR SRCLK (Shift Clock)"
-  uo[6]: "SR OE_n (Output Enable)"
-  uo[7]: "Div 0 Error Pin"
+  uo[0]: "o_WL0"
+  uo[1]: "o_WL1"
+  uo[2]: "o_WL2"
+  uo[3]: "o_WL3"
+  uo[4]: "o_SER"
+  uo[5]: "o_SRCLK"
+  uo[6]: "o_RCLK"
+  uo[7]: "o_OE_n"
 
   # Bidirectional pins
-  uio[0]: "In AC Button Active High"
-  uio[1]: "In Eq Button Active High"
-  uio[2]: "Out Add State"
-  uio[3]: "Out Sub State"
-  uio[4]: "Out Mul State"
-  uio[5]: "Out Div State"
-  uio[6]: "In 2's Comp EN Active High"
-  uio[7]: "In Neg Button Active High"
+  uio[0]: "i_EQ"
+  uio[1]: "i_AC"
+  uio[2]: "i_NEG"
+  uio[3]: "i_NEG_EN"
+  uio[4]: "o_ADD"
+  uio[5]: "o_SUB"
+  uio[6]: "o_MUL"
+  uio[7]: "o_DIV"
 
 # Do not change!
 yaml_version: 6

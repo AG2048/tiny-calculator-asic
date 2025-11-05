@@ -28,7 +28,6 @@ module tb ();
 `endif
 
   // Wire for testing signals
-  // Internal signal declarations
   wire [3:0] o_word_lines;
   wire [3:0] i_bit_lines;
 
@@ -55,15 +54,15 @@ module tb ();
   wire                  o_sr_oe_n;
 
   // Assign uio pins direction and unused pins
-  assign o_add_state_display = uio_out[2];
-  assign o_sub_state_display = uio_out[3];
-  assign o_mul_state_display = uio_out[4];
-  assign o_div_state_display = uio_out[5];
+  assign o_add_state_display = uio_out[4];
+  assign o_sub_state_display = uio_out[5];
+  assign o_mul_state_display = uio_out[6];
+  assign o_div_state_display = uio_out[7];
 
-  assign uio_in[0] = i_ac_pin;
-  assign uio_in[1] = i_eq_pin;
-  assign uio_in[6] = i_2s_comp_mode_pin;
-  assign uio_in[7] = i_neg_pin;
+  assign uio_in[0] = i_eq_pin;
+  assign uio_in[1] = i_ac_pin;
+  assign uio_in[2] = i_neg_pin;
+  assign uio_in[3] = i_2s_comp_mode_pin;
 
   // Assign signals to Output Pins
   assign o_word_lines = uo_out[3:0];
@@ -73,13 +72,13 @@ module tb ();
   assign o_sr_oe_n    = uo_out[7];
   
   // Assign Input Pins to signals
-  assign      ui_in[3:0]  = i_bit_lines;
-  assign      ui_in[4]  = i_add_pin;
-  assign      ui_in[5]  = i_sub_pin;
-  assign      ui_in[6]  = i_mul_pin;
-  assign      ui_in[7]  = i_div_pin;
+  assign      ui_in[3:0] = i_bit_lines;
+  assign      ui_in[4]   = i_add_pin;
+  assign      ui_in[5]   = i_sub_pin;
+  assign      ui_in[6]   = i_mul_pin;
+  assign      ui_in[7]   = i_div_pin;
 
-  tt_um_ag2048_calculator user_project (
+  tt_um_ag2048_tiny_calculator user_project (
 
       // Include power ports for the Gate Level test:
 `ifdef GL_TEST

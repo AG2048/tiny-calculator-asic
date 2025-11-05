@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025 Andy Gong
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+`default_nettype none
+
 module full_adder #(
   parameter DATA_WIDTH = 16
 ) (
