@@ -1,0 +1,10 @@
+{
+  "name": "tiny-calculator-diagrams",
+  "private": true,
+  "scripts": {
+    "generate": "node generate-diagrams.js && node render-png.js"
+  },
+  "devDependencies": {
+    "sharp": "0.34.5"
+  }
+}

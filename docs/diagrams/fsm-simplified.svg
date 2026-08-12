@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3800" height="1420" viewBox="0 0 3800 1420" role="img" aria-labelledby="title desc">
+  <title id="title">Simplified Tiny Calculator finite-state machine</title>
+  <desc id="desc">Six user-facing calculator phases. Each large phase contains the smaller RTL states that implement it.</desc>
+  <defs>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#475569"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#2563eb"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#15803d"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#dc2626"/></marker>
+    <style>
+      .title{font:700 38px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 19px Arial,sans-serif;fill:#475569}
+      .phase-title{font:700 24px Arial,sans-serif;fill:#0f172a}.state{font:700 14px Consolas,monospace;fill:#0f172a}
+      .meaning{font:400 16px Arial,sans-serif;fill:#334155}.node{stroke:#334155;stroke-width:2.3;rx:16}
+      .node-title{font:700 12px Consolas,monospace;fill:#0f172a}.node-body{font:400 14px Arial,sans-serif;fill:#334155}
+      .panel{stroke:#cbd5e1;stroke-width:2;rx:20}.lane-title{font:700 20px Arial,sans-serif;fill:#334155}
+      .edge{fill:none;stroke-width:2.8}.edge.auto{stroke:#475569;marker-end:url(#arrow-gray)}.edge.key{stroke:#2563eb;marker-end:url(#arrow-blue)}
+      .edge.handshake{stroke:#15803d;marker-end:url(#arrow-green)}.edge.error{stroke:#dc2626;marker-end:url(#arrow-red)}
+      .edge-label{font:600 14px Arial,sans-serif;paint-order:stroke;stroke:#f8fafc;stroke-width:11px;stroke-linejoin:round}
+      .auto-text{fill:#475569}.key-text{fill:#1d4ed8}.handshake-text{fill:#166534}.error-text{fill:#b91c1c}
+      .legend{font:600 15px Arial,sans-serif;fill:#334155}.note{font:400 16px Arial,sans-serif;fill:#475569}
+    </style>
+  </defs>
+  <rect width="3800" height="1420" fill="#f8fafc"/>
+  <text x="60" y="62" class="title">Tiny Calculator FSM: user-facing overview</text>
+  <text x="60" y="98" class="subtitle">Large boxes are calculator phases. Monospace rows inside them are the actual calculator_core RTL sub-states.</text>
+  <path class="edge auto" d="M20 480 H60"/><text x="30" y="464" class="edge-label auto-text" text-anchor="middle">reset</text>
+<path class="edge handshake" d="M620 480 H840"/><text x="730" y="464" class="edge-label handshake-text" text-anchor="middle">display accepts zero</text>
+<path class="edge key" d="M1400 480 H1620"/><text x="1510" y="464" class="edge-label key-text" text-anchor="middle">operation selected</text>
+<path class="edge key" d="M2180 480 H2400"/><text x="2290" y="464" class="edge-label key-text" text-anchor="middle">= or operator after B</text>
+<path class="edge handshake" d="M2960 480 H3180"/><text x="3070" y="464" class="edge-label handshake-text" text-anchor="middle">successful result</text>
+<path class="edge error" d="M2610 760 V1010"/><text x="2628" y="900" class="edge-label error-text" text-anchor="start">division by zero</text>
+<path class="edge key" d="M3460 200 V115 H1120 V200"/><text x="2290" y="102" class="edge-label key-text" text-anchor="middle">digit: start a new calculation</text>
+<path class="edge key" d="M3580 200 V70 H1900 V200"/><text x="2740" y="57" class="edge-label key-text" text-anchor="middle">operator: continue from displayed result</text>
+<path class="edge key" d="M3340 760 V865 H2680 V760"/><text x="3010" y="852" class="edge-label key-text" text-anchor="middle">= : repeat retained operation and B</text>
+<path class="edge key" d="M2400 1160 H330 V760"/><text x="1335" y="1147" class="edge-label key-text" text-anchor="middle">AC</text>
+  <g><rect class="node" x="60" y="200" width="560" height="560" fill="#fee2e2"/>
+      <text x="340" y="248" class="phase-title" text-anchor="middle">Clear and ready</text>
+      <line x1="82" y1="268" x2="598" y2="268" stroke="#94a3b8" stroke-width="2"/>
+      <text x="84" y="300" class="state">AC</text>
+        <text x="84" y="324" class="meaning">Clear operands, operator, and sign-entry flags</text>
+<text x="84" y="358" class="state">DISPLAY_AFTER_AC</text>
+        <text x="84" y="382" class="meaning">Send zero to the display driver</text></g>
+<g><rect class="node" x="840" y="200" width="560" height="560" fill="#dbeafe"/>
+      <text x="1120" y="248" class="phase-title" text-anchor="middle">Enter first value (A)</text>
+      <line x1="862" y1="268" x2="1378" y2="268" stroke="#94a3b8" stroke-width="2"/>
+      <text x="864" y="300" class="state">WAIT_FIRST_INPUT</text>
+        <text x="864" y="324" class="meaning">Wait for a digit, operator, NEG, or AC</text>
+<text x="864" y="358" class="state">FIRST_INPUT_NUMBER</text>
+        <text x="864" y="382" class="meaning">Append one hexadecimal digit to A</text>
+<text x="864" y="416" class="state">DISPLAY_AFTER_FIRST_INPUT</text>
+        <text x="864" y="440" class="meaning">Display the updated A value</text>
+<text x="864" y="474" class="state">FIRST_INPUT_NEG</text>
+        <text x="864" y="498" class="meaning">Negate A in signed mode, then redisplay</text>
+<text x="864" y="532" class="state">FIRST_INPUT_OP</text>
+        <text x="864" y="556" class="meaning">Store the selected arithmetic operation</text></g>
+<g><rect class="node" x="1620" y="200" width="560" height="560" fill="#fef3c7"/>
+      <text x="1900" y="248" class="phase-title" text-anchor="middle">Enter second value (B)</text>
+      <line x1="1642" y1="268" x2="2158" y2="268" stroke="#94a3b8" stroke-width="2"/>
+      <text x="1644" y="300" class="state">WAIT_SECOND_INPUT_BEFORE_VALUE</text>
+        <text x="1644" y="324" class="meaning">Operator chosen; B has no digit yet</text>
+<text x="1644" y="358" class="state">SECOND_INPUT_NEG_BEFORE_VALUE</text>
+        <text x="1644" y="382" class="meaning">Prepare negative entry before B's first digit</text>
+<text x="1644" y="416" class="state">COPY_A_TO_B</text>
+        <text x="1644" y="440" class="meaning">For an omitted B, copy displayed A into B</text>
+<text x="1644" y="474" class="state">SECOND_INPUT_NUMBER</text>
+        <text x="1644" y="498" class="meaning">Append one hexadecimal digit to B</text>
+<text x="1644" y="532" class="state">DISPLAY_AFTER_SECOND_INPUT</text>
+        <text x="1644" y="556" class="meaning">Display the updated B value</text>
+<text x="1644" y="590" class="state">WAIT_SECOND_INPUT_AFTER_VALUE</text>
+        <text x="1644" y="614" class="meaning">Wait for more B, NEG, an operator, or equals</text>
+<text x="1644" y="648" class="state">SECOND_INPUT_NEG_AFTER_VALUE</text>
+        <text x="1644" y="672" class="meaning">Negate an already-entered B, then redisplay</text></g>
+<g><rect class="node" x="2400" y="200" width="560" height="560" fill="#ede9fe"/>
+      <text x="2680" y="248" class="phase-title" text-anchor="middle">Calculate or chain</text>
+      <line x1="2422" y1="268" x2="2938" y2="268" stroke="#94a3b8" stroke-width="2"/>
+      <text x="2424" y="300" class="state">SECOND_INPUT_OP_CALCULATE</text>
+        <text x="2424" y="324" class="meaning">Submit A op B and remember the new operator</text>
+<text x="2424" y="358" class="state">SECOND_INPUT_OP_CALCULATE_WAIT_RESULT</text>
+        <text x="2424" y="382" class="meaning">Wait for the chained ALU result</text>
+<text x="2424" y="416" class="state">DISPLAY_AFTER_SECOND_OP</text>
+        <text x="2424" y="440" class="meaning">Display result A, then wait for a new B</text>
+<text x="2424" y="474" class="state">EQUAL_AFTER_SECOND_VALUE</text>
+        <text x="2424" y="498" class="meaning">Submit A op B after equals</text>
+<text x="2424" y="532" class="state">EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT</text>
+        <text x="2424" y="556" class="meaning">Wait for the equals ALU result</text>
+<text x="2424" y="590" class="state">DISPLAY_AFTER_EQUAL</text>
+        <text x="2424" y="614" class="meaning">Display the completed result A</text></g>
+<g><rect class="node" x="3180" y="200" width="560" height="560" fill="#cffafe"/>
+      <text x="3460" y="248" class="phase-title" text-anchor="middle">Result and continuation</text>
+      <line x1="3202" y1="268" x2="3718" y2="268" stroke="#94a3b8" stroke-width="2"/>
+      <text x="3204" y="300" class="state">WAIT_INPUT_AFTER_EQUAL</text>
+        <text x="3204" y="324" class="meaning">Result shown; retain B and the operation</text>
+<text x="3204" y="358" class="state">INPUT_NEG_AFTER_EQUAL</text>
+        <text x="3204" y="382" class="meaning">Negate the displayed result, then redisplay</text>
+<text x="3204" y="416" class="state">CLEAR_AFTER_EQUAL</text>
+        <text x="3204" y="440" class="meaning">A digit clears the old calculation and starts A</text>
+<text x="3204" y="474" class="state">Repeated equals</text>
+        <text x="3204" y="498" class="meaning">Reuse retained operation and B</text>
+<text x="3204" y="532" class="state">Operator after result</text>
+        <text x="3204" y="556" class="meaning">Continue with displayed result as A</text></g>
+  <g><rect class="node" x="2400" y="1010" width="560" height="300" fill="#fecaca"/>
+    <text x="2680" y="1058" class="phase-title" text-anchor="middle">Division error</text>
+    <line x1="2422" y1="1078" x2="2938" y2="1078" stroke="#94a3b8" stroke-width="2"/>
+    <text x="2424" y="1124" class="state">DISPLAY_ERROR</text><text x="2424" y="1148" class="meaning">Send the Err pattern to the display driver</text>
+    <text x="2424" y="1206" class="state">ERROR_WAIT</text><text x="2424" y="1230" class="meaning">Ignore inputs until AC clears the calculator</text>
+  </g>
+  <text x="60" y="1370" class="note">AC from any input-wait phase returns to Clear and ready. Unhandled buttons leave the current wait state unchanged.</text>
+  </svg>
