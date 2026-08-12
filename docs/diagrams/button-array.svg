@@ -1,0 +1,314 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1650" height="1450" viewBox="0 0 1650 1450" role="img" aria-labelledby="title desc">
+  <title id="title">Tiny Calculator 4x4 hexadecimal keypad matrix</title>
+  <desc id="desc">A four-by-four hexadecimal switch matrix. Every key is a diagonal branch from a word line to a bit line, containing one normally-open switch and one series isolation diode. Each bit line has one pull-down resistor.</desc>
+  <style>
+    .title{font:700 38px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 19px Arial,sans-serif;fill:#475569}
+    .section{font:700 25px Arial,sans-serif;fill:#0f172a}.body{font:400 17px Arial,sans-serif;fill:#334155}.small{font:400 15px Arial,sans-serif;fill:#475569}
+    .net-label{font:600 15px Consolas,monospace;fill:#334155}
+    .key{font:700 17px Consolas,monospace;fill:#0f172a}.net{fill:none;stroke:#334155;stroke-width:3}.wl{stroke:#2563eb}.bl{stroke:#15803d}
+    .component{fill:none;stroke:#334155;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}.ground{fill:none;stroke:#334155;stroke-width:3}
+    .direction{fill:none;stroke-width:3.5;marker-end:url(#direction-arrow)}
+    .panel{stroke:#94a3b8;stroke-width:2.5;rx:20}.note{fill:#ffffff;stroke:#cbd5e1;stroke-width:2;rx:15}
+  </style>
+  <defs><marker id="direction-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#334155"/></marker></defs>
+  <rect width="1650" height="1450" fill="#f8fafc"/>
+  <text x="60" y="62" class="title">4×4 hexadecimal keypad matrix</text>
+  <text x="60" y="98" class="subtitle">Each normally-open key is a separate diagonal WL-to-BL branch containing a series isolation diode.</text>
+
+  <rect class="panel" x="45" y="130" width="1560" height="1265" fill="#eff6ff"/>
+  <text x="75" y="172" class="body">The scanner drives one blue word line high. Closing a switch carries that level diagonally through its diode to one green bit-line input.</text>
+  <path class="net wl" d="M120 360 H1530"/>
+<path class="direction wl" d="M120 360 H170"/>
+<text x="125" y="342" class="net-label">WL0 / uo[0]</text>
+<g aria-label="Key 0 between WL0 and BL0">
+        <circle cx="400" cy="360" r="5" fill="#334155"/>
+        <circle cx="500" cy="285" r="5" fill="#334155"/>
+        <g transform="translate(400 360) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="380" y="248" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="414" y="269" class="key" text-anchor="middle">0</text>
+      </g>
+<g aria-label="Key 1 between WL0 and BL1">
+        <circle cx="700" cy="360" r="5" fill="#334155"/>
+        <circle cx="800" cy="285" r="5" fill="#334155"/>
+        <g transform="translate(700 360) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="680" y="248" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="714" y="269" class="key" text-anchor="middle">1</text>
+      </g>
+<g aria-label="Key 2 between WL0 and BL2">
+        <circle cx="1000" cy="360" r="5" fill="#334155"/>
+        <circle cx="1100" cy="285" r="5" fill="#334155"/>
+        <g transform="translate(1000 360) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="980" y="248" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="1014" y="269" class="key" text-anchor="middle">2</text>
+      </g>
+<g aria-label="Key 3 between WL0 and BL3">
+        <circle cx="1300" cy="360" r="5" fill="#334155"/>
+        <circle cx="1400" cy="285" r="5" fill="#334155"/>
+        <g transform="translate(1300 360) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="1280" y="248" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="1314" y="269" class="key" text-anchor="middle">3</text>
+      </g>
+<path class="net wl" d="M120 590 H1530"/>
+<path class="direction wl" d="M120 590 H170"/>
+<text x="125" y="572" class="net-label">WL1 / uo[1]</text>
+<g aria-label="Key 4 between WL1 and BL0">
+        <circle cx="400" cy="590" r="5" fill="#334155"/>
+        <circle cx="500" cy="515" r="5" fill="#334155"/>
+        <g transform="translate(400 590) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="380" y="478" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="414" y="499" class="key" text-anchor="middle">4</text>
+      </g>
+<g aria-label="Key 5 between WL1 and BL1">
+        <circle cx="700" cy="590" r="5" fill="#334155"/>
+        <circle cx="800" cy="515" r="5" fill="#334155"/>
+        <g transform="translate(700 590) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="680" y="478" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="714" y="499" class="key" text-anchor="middle">5</text>
+      </g>
+<g aria-label="Key 6 between WL1 and BL2">
+        <circle cx="1000" cy="590" r="5" fill="#334155"/>
+        <circle cx="1100" cy="515" r="5" fill="#334155"/>
+        <g transform="translate(1000 590) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="980" y="478" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="1014" y="499" class="key" text-anchor="middle">6</text>
+      </g>
+<g aria-label="Key 7 between WL1 and BL3">
+        <circle cx="1300" cy="590" r="5" fill="#334155"/>
+        <circle cx="1400" cy="515" r="5" fill="#334155"/>
+        <g transform="translate(1300 590) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="1280" y="478" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="1314" y="499" class="key" text-anchor="middle">7</text>
+      </g>
+<path class="net wl" d="M120 820 H1530"/>
+<path class="direction wl" d="M120 820 H170"/>
+<text x="125" y="802" class="net-label">WL2 / uo[2]</text>
+<g aria-label="Key 8 between WL2 and BL0">
+        <circle cx="400" cy="820" r="5" fill="#334155"/>
+        <circle cx="500" cy="745" r="5" fill="#334155"/>
+        <g transform="translate(400 820) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="380" y="708" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="414" y="729" class="key" text-anchor="middle">8</text>
+      </g>
+<g aria-label="Key 9 between WL2 and BL1">
+        <circle cx="700" cy="820" r="5" fill="#334155"/>
+        <circle cx="800" cy="745" r="5" fill="#334155"/>
+        <g transform="translate(700 820) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="680" y="708" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="714" y="729" class="key" text-anchor="middle">9</text>
+      </g>
+<g aria-label="Key A between WL2 and BL2">
+        <circle cx="1000" cy="820" r="5" fill="#334155"/>
+        <circle cx="1100" cy="745" r="5" fill="#334155"/>
+        <g transform="translate(1000 820) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="980" y="708" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="1014" y="729" class="key" text-anchor="middle">A</text>
+      </g>
+<g aria-label="Key B between WL2 and BL3">
+        <circle cx="1300" cy="820" r="5" fill="#334155"/>
+        <circle cx="1400" cy="745" r="5" fill="#334155"/>
+        <g transform="translate(1300 820) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="1280" y="708" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="1314" y="729" class="key" text-anchor="middle">B</text>
+      </g>
+<path class="net wl" d="M120 1050 H1530"/>
+<path class="direction wl" d="M120 1050 H170"/>
+<text x="125" y="1032" class="net-label">WL3 / uo[3]</text>
+<g aria-label="Key C between WL3 and BL0">
+        <circle cx="400" cy="1050" r="5" fill="#334155"/>
+        <circle cx="500" cy="975" r="5" fill="#334155"/>
+        <g transform="translate(400 1050) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="380" y="938" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="414" y="959" class="key" text-anchor="middle">C</text>
+      </g>
+<g aria-label="Key D between WL3 and BL1">
+        <circle cx="700" cy="1050" r="5" fill="#334155"/>
+        <circle cx="800" cy="975" r="5" fill="#334155"/>
+        <g transform="translate(700 1050) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="680" y="938" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="714" y="959" class="key" text-anchor="middle">D</text>
+      </g>
+<g aria-label="Key E between WL3 and BL2">
+        <circle cx="1000" cy="1050" r="5" fill="#334155"/>
+        <circle cx="1100" cy="975" r="5" fill="#334155"/>
+        <g transform="translate(1000 1050) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="980" y="938" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="1014" y="959" class="key" text-anchor="middle">E</text>
+      </g>
+<g aria-label="Key F between WL3 and BL3">
+        <circle cx="1300" cy="1050" r="5" fill="#334155"/>
+        <circle cx="1400" cy="975" r="5" fill="#334155"/>
+        <g transform="translate(1300 1050) rotate(-36.87)">
+          <path class="component" d="M0 0 H18"/>
+          <circle cx="18" cy="0" r="4" fill="#334155"/>
+          <circle cx="52" cy="0" r="4" fill="#334155"/>
+          <path class="component" d="M18 0 L47 -19"/>
+          <path class="component" d="M52 0 H67"/>
+          <path class="component" d="M67 -14 L67 14 L89 0 Z"/>
+          <path class="component" d="M93 -15 V15"/>
+          <path class="component" d="M93 0 H125"/>
+        </g>
+        <rect x="1280" y="938" width="68" height="30" rx="8" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="1314" y="959" class="key" text-anchor="middle">F</text>
+      </g>
+<path class="net bl" d="M500 220 V1160"/>
+<path class="direction bl" d="M500 270 V220"/>
+<text x="500" y="205" class="net-label" text-anchor="middle">BL0 / ui[0]</text>
+<path class="component" d="M500 1160 V1185 L484 1197 L516 1213 L484 1229 L516 1245 L484 1261 L500 1277 V1295"/>
+<text x="528" y="1235" class="small">pull-down</text>
+<path class="ground" d="M478 1295 H522 M486 1305 H514 M494 1315 H506"/>
+<path class="net bl" d="M800 220 V1160"/>
+<path class="direction bl" d="M800 270 V220"/>
+<text x="800" y="205" class="net-label" text-anchor="middle">BL1 / ui[1]</text>
+<path class="component" d="M800 1160 V1185 L784 1197 L816 1213 L784 1229 L816 1245 L784 1261 L800 1277 V1295"/>
+<text x="828" y="1235" class="small">pull-down</text>
+<path class="ground" d="M778 1295 H822 M786 1305 H814 M794 1315 H806"/>
+<path class="net bl" d="M1100 220 V1160"/>
+<path class="direction bl" d="M1100 270 V220"/>
+<text x="1100" y="205" class="net-label" text-anchor="middle">BL2 / ui[2]</text>
+<path class="component" d="M1100 1160 V1185 L1084 1197 L1116 1213 L1084 1229 L1116 1245 L1084 1261 L1100 1277 V1295"/>
+<text x="1128" y="1235" class="small">pull-down</text>
+<path class="ground" d="M1078 1295 H1122 M1086 1305 H1114 M1094 1315 H1106"/>
+<path class="net bl" d="M1400 220 V1160"/>
+<path class="direction bl" d="M1400 270 V220"/>
+<text x="1400" y="205" class="net-label" text-anchor="middle">BL3 / ui[3]</text>
+<path class="component" d="M1400 1160 V1185 L1384 1197 L1416 1213 L1384 1229 L1416 1245 L1384 1261 L1400 1277 V1295"/>
+<text x="1428" y="1235" class="small">pull-down</text>
+<path class="ground" d="M1378 1295 H1422 M1386 1305 H1414 M1394 1315 H1406"/>
+  <rect class="note" x="75" y="1340" width="1500" height="38"/>
+  <text x="95" y="1366" class="small">Diode orientation: anode toward WL, cathode/bar toward BL. Use one diode per key and one pull-down per BL input.</text>
+  </svg>

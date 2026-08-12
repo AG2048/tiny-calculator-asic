@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3650" height="2880" viewBox="0 0 3650 2880" role="img" aria-labelledby="title desc">
+  <title id="title">Detailed calculator_core finite-state machine</title>
+  <desc id="desc">All 25 RTL states with separated routing channels for key, handshake, automatic, and error transitions.</desc>
+  <defs>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#475569"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#2563eb"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#15803d"/></marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#dc2626"/></marker>
+    <style>
+      .title{font:700 38px Arial,sans-serif;fill:#0f172a}.subtitle{font:400 19px Arial,sans-serif;fill:#475569}
+      .phase-title{font:700 24px Arial,sans-serif;fill:#0f172a}.state{font:700 14px Consolas,monospace;fill:#0f172a}
+      .meaning{font:400 16px Arial,sans-serif;fill:#334155}.node{stroke:#334155;stroke-width:2.3;rx:16}
+      .node-title{font:700 12px Consolas,monospace;fill:#0f172a}.node-body{font:400 14px Arial,sans-serif;fill:#334155}
+      .panel{stroke:#cbd5e1;stroke-width:2;rx:20}.lane-title{font:700 20px Arial,sans-serif;fill:#334155}
+      .edge{fill:none;stroke-width:2.8}.edge.auto{stroke:#475569;marker-end:url(#arrow-gray)}.edge.key{stroke:#2563eb;marker-end:url(#arrow-blue)}
+      .edge.handshake{stroke:#15803d;marker-end:url(#arrow-green)}.edge.error{stroke:#dc2626;marker-end:url(#arrow-red)}
+      .edge-label{font:600 14px Arial,sans-serif;paint-order:stroke;stroke:#f8fafc;stroke-width:11px;stroke-linejoin:round}
+      .auto-text{fill:#475569}.key-text{fill:#1d4ed8}.handshake-text{fill:#166534}.error-text{fill:#b91c1c}
+      .legend{font:600 15px Arial,sans-serif;fill:#334155}.note{font:400 16px Arial,sans-serif;fill:#475569}
+    </style>
+  </defs>
+  <rect width="3650" height="2880" fill="#f8fafc"/>
+  <text x="60" y="62" class="title">calculator_core FSM: detailed RTL transitions</text>
+  <text x="60" y="98" class="subtitle">Every box is a named RTL state. Long return paths use dedicated routing channels outside the state rows.</text>
+  <rect class="panel" x="55" y="185" width="2180" height="510" fill="#eff6ff"/><text x="75" y="220" class="lane-title">Clear and first-value entry</text>
+  <rect class="panel" x="55" y="865" width="3075" height="545" fill="#fffbeb"/><text x="75" y="900" class="lane-title">Operator selected and second-value entry</text>
+  <rect class="panel" x="55" y="1635" width="3325" height="500" fill="#f5f3ff"/><text x="75" y="1620" class="lane-title">ALU submission, result display, and after-equals actions</text>
+  <rect class="panel" x="1655" y="2405" width="850" height="230" fill="#fef2f2"/><text x="1675" y="2440" class="lane-title">Division error</text>
+  <path class="edge auto" d="M440 298 H520"/><text x="480" y="228" class="edge-label auto-text" text-anchor="middle">automatic</text>
+<path class="edge handshake" d="M880 298 H960"/><text x="920" y="228" class="edge-label handshake-text" text-anchor="middle">display accepts zero</text>
+<path class="edge key" d="M1320 298 H1400"/><text x="1360" y="228" class="edge-label key-text" text-anchor="middle">digit</text>
+<path class="edge auto" d="M1760 298 H1840"/><text x="1800" y="228" class="edge-label auto-text" text-anchor="middle">automatic</text>
+<path class="edge handshake" d="M2020 240 V150 H1140 V240"/><text x="1550" y="125" class="edge-label handshake-text" text-anchor="end">display accepts A</text>
+<path class="edge key" d="M1140 356 V500"/><text x="1110" y="435" class="edge-label key-text" text-anchor="start">operator</text>
+<path class="edge key" d="M1210 356 V430 H1580 V500"/><text x="1400" y="405" class="edge-label key-text" text-anchor="middle">NEG</text>
+<path class="edge auto" d="M1760 558 H2020 V356"/><text x="1890" y="546" class="edge-label auto-text" text-anchor="middle">automatic: redisplay A</text>
+<path class="edge auto" d="M1140 616 V820 H260 V920"/><text x="700" y="795" class="edge-label auto-text" text-anchor="middle">operation selected</text>
+<path class="edge key" d="M440 952 H520"/><text x="480" y="940" class="edge-label key-text" text-anchor="middle">NEG</text>
+<path class="edge auto" d="M700 1036 V1170 H260 V1036"/><text x="480" y="1145" class="edge-label auto-text" text-anchor="middle">automatic</text>
+<path class="edge key" d="M320 920 V860 H1140 V920"/><text x="1040" y="847" class="edge-label key-text" text-anchor="middle">= : copy A to B</text>
+<path class="edge key" d="M210 1036 V1260 H1580 V1036"/><text x="900" y="1235" class="edge-label key-text" text-anchor="middle">digit: start B</text>
+<path class="edge key" d="M80 978 H30 V455 H1020 V500"/><text x="380" y="430" class="edge-label key-text" text-anchor="middle">operator: replace selection</text>
+<path class="edge auto" d="M1760 978 H1840"/><text x="1800" y="908" class="edge-label auto-text" text-anchor="middle">automatic</text>
+<path class="edge handshake" d="M2200 978 H2280"/><text x="2240" y="908" class="edge-label handshake-text" text-anchor="middle">display accepts B</text>
+<path class="edge key" d="M2640 954 H2720"/><text x="2680" y="940" class="edge-label key-text" text-anchor="middle">NEG</text>
+<path class="edge auto" d="M2900 1036 V1320 H2020 V1036"/><text x="2460" y="1295" class="edge-label auto-text" text-anchor="middle">automatic: redisplay B</text>
+<path class="edge key" d="M2500 920 V840 H1580 V920"/><text x="2020" y="815" class="edge-label key-text" text-anchor="middle">digit: extend B</text>
+<path class="edge key" d="M2360 1036 V1420 H260 V1690"/><text x="630" y="1407" class="edge-label key-text" text-anchor="middle">operator after B</text>
+<path class="edge handshake" d="M440 1748 H520"/><text x="480" y="1678" class="edge-label handshake-text" text-anchor="middle">ALU accepts</text>
+<path class="edge handshake" d="M880 1748 H960"/><text x="920" y="1678" class="edge-label handshake-text" text-anchor="middle">success</text>
+<path class="edge handshake" d="M1140 1806 V2190 H15 V990 H80"/><text x="430" y="2177" class="edge-label handshake-text" text-anchor="middle">display accepts; enter next B</text>
+<path class="edge auto" d="M1140 1036 V1380 H1600 V1690"/><text x="1370" y="1355" class="edge-label auto-text" text-anchor="middle">automatic: calculate A op A</text>
+<path class="edge key" d="M2560 1036 V1490 H1760 V1690"/><text x="2200" y="1465" class="edge-label key-text" text-anchor="middle">= after B</text>
+<path class="edge handshake" d="M1860 1748 H1940"/><text x="1900" y="1678" class="edge-label handshake-text" text-anchor="middle">ALU accepts</text>
+<path class="edge handshake" d="M2300 1748 H2380"/><text x="2340" y="1678" class="edge-label handshake-text" text-anchor="middle">success</text>
+<path class="edge handshake" d="M2740 1748 H2820"/><text x="2780" y="1678" class="edge-label handshake-text" text-anchor="middle">display accepts result</text>
+<path class="edge key" d="M2910 1806 V1900 H2660 V1950"/><text x="2770" y="1875" class="edge-label key-text" text-anchor="middle">NEG</text>
+<path class="edge auto" d="M2460 1950 V1806"/><text x="2435" y="1873" class="edge-label auto-text" text-anchor="end">automatic: redisplay result</text>
+<path class="edge key" d="M3000 1806 V1950"/><text x="3020" y="1875" class="edge-label key-text" text-anchor="start">digit</text>
+<path class="edge auto" d="M3180 2008 H3500 V115 H1580 V240"/><text x="2750" y="102" class="edge-label auto-text" text-anchor="middle">automatic: digit becomes new A</text>
+<path class="edge key" d="M3180 1724 H3540 V460 H1260 V500"/><text x="2660" y="447" class="edge-label key-text" text-anchor="middle">operator: continue from result</text>
+<path class="edge key" d="M3180 1772 H3570 V2190 H1680 V1806"/><text x="2610" y="2165" class="edge-label key-text" text-anchor="middle">= : repeat retained op and B</text>
+<path class="edge error" d="M700 1806 V2350 H1780 V2460"/><text x="1250" y="2325" class="edge-label error-text" text-anchor="middle">division by zero</text>
+<path class="edge error" d="M2120 1806 V2290 H1940 V2460"/><text x="2200" y="2265" class="edge-label error-text" text-anchor="middle">division by zero</text>
+<path class="edge handshake" d="M2040 2518 H2120"/><text x="2080" y="2448" class="edge-label handshake-text" text-anchor="middle">display accepts Err</text>
+  <g><rect class="node" x="80" y="240" width="360" height="116" fill="#fee2e2"/>
+      <text x="260" y="278" class="node-title" text-anchor="middle">AC</text>
+      <text x="260" y="319" class="node-body" text-anchor="middle">Clear all calculator state</text></g>
+<g><rect class="node" x="520" y="240" width="360" height="116" fill="#e0f2fe"/>
+      <text x="700" y="278" class="node-title" text-anchor="middle">DISPLAY_AFTER_AC</text>
+      <text x="700" y="319" class="node-body" text-anchor="middle">Offer zero to display</text></g>
+<g><rect class="node" x="960" y="240" width="360" height="116" fill="#dbeafe"/>
+      <text x="1140" y="278" class="node-title" text-anchor="middle">WAIT_FIRST_INPUT</text>
+      <text x="1140" y="319" class="node-body" text-anchor="middle">Wait for first-value input</text></g>
+<g><rect class="node" x="1400" y="240" width="360" height="116" fill="#dbeafe"/>
+      <text x="1580" y="278" class="node-title" text-anchor="middle">FIRST_INPUT_NUMBER</text>
+      <text x="1580" y="319" class="node-body" text-anchor="middle">Append one digit to A</text></g>
+<g><rect class="node" x="1840" y="240" width="360" height="116" fill="#e0f2fe"/>
+      <text x="2020" y="278" class="node-title" text-anchor="middle">DISPLAY_AFTER_FIRST_INPUT</text>
+      <text x="2020" y="319" class="node-body" text-anchor="middle">Offer updated A to display</text></g>
+<g><rect class="node" x="960" y="500" width="360" height="116" fill="#dcfce7"/>
+      <text x="1140" y="538" class="node-title" text-anchor="middle">FIRST_INPUT_OP</text>
+      <text x="1140" y="579" class="node-body" text-anchor="middle">Store selected operation</text></g>
+<g><rect class="node" x="1400" y="500" width="360" height="116" fill="#dbeafe"/>
+      <text x="1580" y="538" class="node-title" text-anchor="middle">FIRST_INPUT_NEG</text>
+      <text x="1580" y="579" class="node-body" text-anchor="middle">Negate A and toggle entry sign</text></g>
+<g><rect class="node" x="80" y="920" width="360" height="116" fill="#fef3c7"/>
+      <text x="260" y="958" class="node-title" text-anchor="middle">WAIT_SECOND_INPUT_BEFORE_VALUE</text>
+      <text x="260" y="999" class="node-body" text-anchor="middle">Operator selected; B empty</text></g>
+<g><rect class="node" x="520" y="920" width="360" height="116" fill="#fef3c7"/>
+      <text x="700" y="958" class="node-title" text-anchor="middle">SECOND_INPUT_NEG_BEFORE_VALUE</text>
+      <text x="700" y="999" class="node-body" text-anchor="middle">Prepare negative B entry</text></g>
+<g><rect class="node" x="960" y="920" width="360" height="116" fill="#fef3c7"/>
+      <text x="1140" y="958" class="node-title" text-anchor="middle">COPY_A_TO_B</text>
+      <text x="1140" y="999" class="node-body" text-anchor="middle">Copy A to omitted B</text></g>
+<g><rect class="node" x="1400" y="920" width="360" height="116" fill="#fef3c7"/>
+      <text x="1580" y="958" class="node-title" text-anchor="middle">SECOND_INPUT_NUMBER</text>
+      <text x="1580" y="999" class="node-body" text-anchor="middle">Append one digit to B</text></g>
+<g><rect class="node" x="1840" y="920" width="360" height="116" fill="#fff7d6"/>
+      <text x="2020" y="958" class="node-title" text-anchor="middle">DISPLAY_AFTER_SECOND_INPUT</text>
+      <text x="2020" y="999" class="node-body" text-anchor="middle">Offer updated B to display</text></g>
+<g><rect class="node" x="2280" y="920" width="360" height="116" fill="#fef3c7"/>
+      <text x="2460" y="958" class="node-title" text-anchor="middle">WAIT_SECOND_INPUT_AFTER_VALUE</text>
+      <text x="2460" y="999" class="node-body" text-anchor="middle">B exists; await next action</text></g>
+<g><rect class="node" x="2720" y="920" width="360" height="116" fill="#fef3c7"/>
+      <text x="2900" y="958" class="node-title" text-anchor="middle">SECOND_INPUT_NEG_AFTER_VALUE</text>
+      <text x="2900" y="999" class="node-body" text-anchor="middle">Negate entered B</text></g>
+<g><rect class="node" x="80" y="1690" width="360" height="116" fill="#ede9fe"/>
+      <text x="260" y="1728" class="node-title" text-anchor="middle">SECOND_INPUT_OP_CALCULATE</text>
+      <text x="260" y="1769" class="node-body" text-anchor="middle">Submit old op; queue new op</text></g>
+<g><rect class="node" x="520" y="1690" width="360" height="116" fill="#ede9fe"/>
+      <text x="700" y="1728" class="node-title" text-anchor="middle">SECOND_INPUT_OP_CALCULATE_WAIT_RESULT</text>
+      <text x="700" y="1769" class="node-body" text-anchor="middle">Wait for chained result</text></g>
+<g><rect class="node" x="960" y="1690" width="360" height="116" fill="#e0f2fe"/>
+      <text x="1140" y="1728" class="node-title" text-anchor="middle">DISPLAY_AFTER_SECOND_OP</text>
+      <text x="1140" y="1769" class="node-body" text-anchor="middle">Display chained result A</text></g>
+<g><rect class="node" x="1500" y="1690" width="360" height="116" fill="#ede9fe"/>
+      <text x="1680" y="1728" class="node-title" text-anchor="middle">EQUAL_AFTER_SECOND_VALUE</text>
+      <text x="1680" y="1769" class="node-body" text-anchor="middle">Submit A op B for equals</text></g>
+<g><rect class="node" x="1940" y="1690" width="360" height="116" fill="#ede9fe"/>
+      <text x="2120" y="1728" class="node-title" text-anchor="middle">EQUAL_AFTER_SECOND_VALUE_WAIT_RESULT</text>
+      <text x="2120" y="1769" class="node-body" text-anchor="middle">Wait for equals result</text></g>
+<g><rect class="node" x="2380" y="1690" width="360" height="116" fill="#e0f2fe"/>
+      <text x="2560" y="1728" class="node-title" text-anchor="middle">DISPLAY_AFTER_EQUAL</text>
+      <text x="2560" y="1769" class="node-body" text-anchor="middle">Display completed result A</text></g>
+<g><rect class="node" x="2820" y="1690" width="360" height="116" fill="#cffafe"/>
+      <text x="3000" y="1728" class="node-title" text-anchor="middle">WAIT_INPUT_AFTER_EQUAL</text>
+      <text x="3000" y="1769" class="node-body" text-anchor="middle">Result shown; retain op and B</text></g>
+<g><rect class="node" x="2380" y="1950" width="360" height="116" fill="#cffafe"/>
+      <text x="2560" y="1988" class="node-title" text-anchor="middle">INPUT_NEG_AFTER_EQUAL</text>
+      <text x="2560" y="2029" class="node-body" text-anchor="middle">Negate displayed result A</text></g>
+<g><rect class="node" x="2820" y="1950" width="360" height="116" fill="#cffafe"/>
+      <text x="3000" y="1988" class="node-title" text-anchor="middle">CLEAR_AFTER_EQUAL</text>
+      <text x="3000" y="2029" class="node-body" text-anchor="middle">Clear before a new first digit</text></g>
+<g><rect class="node" x="1680" y="2460" width="360" height="116" fill="#fecaca"/>
+      <text x="1860" y="2498" class="node-title" text-anchor="middle">DISPLAY_ERROR</text>
+      <text x="1860" y="2539" class="node-body" text-anchor="middle">Offer Err to display</text></g>
+<g><rect class="node" x="2120" y="2460" width="360" height="116" fill="#fecaca"/>
+      <text x="2300" y="2498" class="node-title" text-anchor="middle">ERROR_WAIT</text>
+      <text x="2300" y="2539" class="node-body" text-anchor="middle">Ignore every input except AC</text></g>
+  <rect x="70" y="2800" width="3510" height="60" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <line x1="100" y1="2830" x2="165" y2="2830" class="edge auto"/><text x="185" y="2836" class="legend">automatic</text>
+  <line x1="420" y1="2830" x2="485" y2="2830" class="edge key"/><text x="505" y="2836" class="legend">button/key</text>
+  <line x1="760" y1="2830" x2="825" y2="2830" class="edge handshake"/><text x="845" y="2836" class="legend">valid/ready or successful response</text>
+  <line x1="1300" y1="2830" x2="1365" y2="2830" class="edge error"/><text x="1385" y="2836" class="legend">division by zero</text>
+  <text x="1830" y="2836" class="note">AC from any input-wait state goes to AC; unhandled keys remain in that wait state.</text>
+  </svg>
