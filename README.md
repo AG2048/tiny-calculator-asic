@@ -1,3 +1,5 @@
+![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
+
 # Tiny Calculator ASIC
 
 Tiny Calculator is a 16-bit hexadecimal calculator designed for manufacture through Tiny Tapeout. It scans a 4×4 keypad, accepts dedicated arithmetic and control buttons, performs unsigned or two's-complement arithmetic, and streams the result to five seven-segment display positions through an external shift-register chain.
@@ -251,8 +253,6 @@ The RTL changes serialized data around the same internal rising edge that drives
 For testbench structure, prerequisites, RTL simulation, and gate-level simulation, see **[test/README.md](test/README.md)**.
 
 ---
-
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
 ## What is Tiny Tapeout?
 
